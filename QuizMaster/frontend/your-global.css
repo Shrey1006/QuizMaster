@@ -1,0 +1,121 @@
+:root {
+  /* Core Colors */
+  --background: #ffffff;
+  --foreground: oklch(0.145 0 0);
+  --card: #ffffff;
+  --card-foreground: oklch(0.145 0 0);
+  --primary: #030213;
+  --primary-foreground: oklch(1 0 0);
+  --muted-foreground: #717182;
+  --border: rgba(0, 0, 0, 0.1);
+  --destructive: #d4183d;
+
+  /* .dark mode overrides */
+  --background-dark: oklch(0.145 0 0);
+  --foreground-dark: oklch(0.985 0 0);
+  --card-dark: oklch(0.145 0 0);
+  --card-foreground-dark: oklch(0.985 0 0);
+  --primary-dark: oklch(0.985 0 0);
+  --primary-foreground-dark: oklch(0.205 0 0);
+  --muted-foreground-dark: oklch(0.708 0 0);
+  --border-dark: oklch(0.269 0 0);
+  --destructive-dark: oklch(0.396 0 0);
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--background);
+  color: var(--foreground);
+  transition: background-color 0.3s, color 0.3s;
+}
+
+body.dark {
+  background-color: var(--background-dark);
+  color: var(--foreground-dark);
+}
+
+/* Utility classes using variables */
+.card {
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  color: var(--card-foreground);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+  transition: background-color 0.2s, color 0.2s;
+}
+
+body.dark .card {
+  background-color: var(--card-dark);
+  color: var(--card-foreground-dark);
+  border-color: var(--border-dark);
+}
+
+.input, .textarea, .select-trigger {
+  border: 1px solid var(--border);
+  background-color: var(--background);
+  color: var(--foreground);
+  padding-left: 2.5rem; /* For icon space, overridden where no icon */
+  border-radius: 0.5rem;
+}
+
+.input:not(.has-icon), .textarea:not(.has-icon), .select-trigger:not(.has-icon) {
+  padding-left: 1rem !important;
+}
+
+body.dark .input,
+body.dark .textarea,
+body.dark .select-trigger {
+  background-color: var(--background-dark);
+  color: var(--foreground-dark);
+  /* Dark mode input background and border shading */
+  background-color: var(--background-dark);
+  color: var(--foreground-dark);
+  border-color: var(--border-dark);
+}
+
+.btn-primary {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  font-weight: 600;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  box-shadow: 0 2px 8px rgb(3 2 19 / 0.3);
+  transition: background-color 0.2s, box-shadow 0.2s;
+}
+.btn-primary:hover {
+  background-color: #050418;
+  box-shadow: 0 4px 12px rgb(3 2 19 / 0.4);
+}
+
+.toast-success {
+  background-color: #22c55e; /* Tailwind green-500 */
+}
+.toast-error {
+  background-color: #ef4444; /* Tailwind red-500 */
+}
+
+.animate-shake {
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-10px); }
+  40%, 80% { transform: translateX(10px); }
+}
+
+/* Card shadow variants */
+.card-shadow {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* Additional UI extras for forms, buttons, modals */
+.modal {
+  background: var(--card);
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  box-shadow: 0 10px 15px rgba(0,0,0,0.1);
+}
+.modal > h2 {
+  font-weight: 600;
+  margin-bottom: 1rem;
+}

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en" class="langen">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>QuizMaster - Sign In</title>
+    <!-- Load Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.12.7/recharts.min.js"
+    ></script>
+    <style>
+      :root {
+        --background: #ffffff;
+        --foreground: oklch(0.145 0 0);
+        --card: #ffffff;
+        --card-foreground: oklch(0.145 0 0);
+        --primary: #030213;
+        --primary-foreground: oklch(1 0 0);
+        --muted-foreground: #717182;
+        --border: rgba(0, 0, 0, 0.1);
+        --destructive: #d4183d;
+      }
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: var(--background);
+        color: var(--foreground);
+        transition: background-color 0.3s, color 0.3s;
+      }
+      .input {
+        border: 1px solid var(--border);
+        background-color: var(--background);
+        color: var(--foreground);
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        width: 100%;
+        margin-top: 0.25rem;
+      }
+      .btn-primary {
+        background-color: var(--primary);
+        color: var(--primary-foreground);
+        font-weight: 600;
+        border-radius: 0.5rem;
+        padding: 0.5rem 1rem;
+        width: 100%;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+      }
+      .btn-primary:hover {
+        background-color: #050418;
+      }
+      .card {
+        background-color: var(--card);
+        border: 1px solid var(--border);
+        color: var(--card-foreground);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+        padding: 2rem;
+        border-radius: 1rem;
+        max-width: 400px;
+        margin: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      class="min-h-screen flex flex-col items-center justify-center px-4 py-12 sm:px-6 lg:px-8"
+    >
+      <div class="card">
+        <h2 class="text-3xl font-extrabold text-center mb-6">Sign in to QuizMaster</h2>
+        <form id="login-form">
+          <label for="usernameOrEmail" class="block text-sm font-medium mb-1"
+            >Username or Email</label
+          >
+          <input
+            id="usernameOrEmail"
+            name="usernameOrEmail"
+            type="text"
+            required
+            class="input"
+            placeholder="Enter your username or email"
+          />
+
+          <label for="password" class="block text-sm font-medium mt-4 mb-1"
+            >Password</label
+          >
+          <input
+            id="password"
+            name="password"
+            type="password"
+            required
+            class="input"
+            placeholder="Enter your password"
+          />
+
+          <button type="submit" class="btn-primary mt-6">Sign In</button>
+        </form>
+      </div>
+    </div>
+    <script>
+      document.getElementById("login-form").addEventListener("submit", function (e) {
+        e.preventDefault();
+        const usernameOrEmail = e.target.usernameOrEmail.value.trim();
+        const password = e.target.password.value;
+        if (!usernameOrEmail || !password) {
+          alert("Please enter both username/email and password.");
+          return;
+        }
+        // Placeholder for login logic
+        alert("Login successful! Redirecting...");
+        window.location.href = "dashboard.html";
+      });
+    </script>
+  </body>
+</html>

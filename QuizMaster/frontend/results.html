@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en" class="langen">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>QuizMaster - Results</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --background: #ffffff;
+      --foreground: oklch(0.145 0 0);
+      --card: #ffffff;
+      --card-foreground: oklch(0.145 0 0);
+      --primary: #030213;
+      --primary-foreground: oklch(1 0 0);
+      --muted-foreground: #717182;
+      --border: rgba(0, 0, 0, 0.1);
+      --destructive: #d4183d;
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--background);
+      color: var(--foreground);
+      transition: background-color 0.3s, color 0.3s;
+    }
+    header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      height: 4rem;
+      padding: 0 1.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      z-index: 50;
+    }
+    nav a {
+      margin-left: 1rem;
+      font-weight: 500;
+      color: var(--foreground);
+      text-decoration: none;
+    }
+    nav a.active, nav a:hover {
+      color: var(--primary);
+      font-weight: 700;
+    }
+    main {
+      padding-top: 5rem;
+      max-width: 48rem;
+      margin: 0 auto;
+      padding-left: 1.5rem;
+      padding-right: 1.5rem;
+    }
+    .card {
+      background-color: var(--card);
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+      border-radius: 1rem;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      color: var(--card-foreground);
+    }
+    .result-summary {
+      font-size: 1.125rem;
+      margin-bottom: 1rem;
+    }
+    .result-summary strong {
+      font-weight: 700;
+    }
+    .question-review {
+      border-top: 1px solid var(--border);
+      padding-top: 1rem;
+      margin-top: 1rem;
+    }
+    .question-review h3 {
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+    .correct {
+      color: #16a34a;
+      font-weight: 600;
+    }
+    .incorrect {
+      color: #dc2626;
+      font-weight: 600;
+    }
+    button.btn-primary {
+      background-color: var(--primary);
+      color: var(--primary-foreground);
+      font-weight: 600;
+      border-radius: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      cursor: pointer;
+      font-size: 1rem;
+      border: none;
+      display: block;
+      margin: 2rem auto;
+      transition: background-color 0.2s ease;
+    }
+    button.btn-primary:hover {
+      background-color: #050418;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Results</h1>
+    <nav>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="browse.html">Browse</a>
+      <a href="profile.html">Profile</a>
+      <a href="results.html" class="active">Results</a>
+      <a href="feedback.html">Feedback</a>
+    </nav>
+  </header>
+  <main>
+    <div class="card">
+      <h2>Quiz Results Summary</h2>
+      <p class="result-summary"><strong>Quiz:</strong> Sample Quiz</p>
+      <p class="result-summary"><strong>Score:</strong> 85 / 100</p>
+      <p class="result-summary"><strong>Percentage:</strong> 85%</p>
+      <p class="result-summary"><strong>Result:</strong> <span class="correct">Pass</span></p>
+      <div class="question-review">
+        <h3>1. What is 10 + 5?</h3>
+        <p>Your answer: <span class="correct">15</span></p>
+        <p>Correct answer: 15</p>
+      </div>
+      <div class="question-review">
+        <h3>2. Which planet is known as the Red Planet?</h3>
+        <p>Your answer: <span class="incorrect">Jupiter</span></p>
+        <p>Correct answer: Mars</p>
+      </div>
+      <div class="question-review">
+        <h3>3. What language runs in a web browser?</h3>
+        <p>Your answer: <span class="correct">JavaScript</span></p>
+        <p>Correct answer: JavaScript</p>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="window.location.href='dashboard.html'">Back to Dashboard</button>
+  </main>
+</body>
+</html>

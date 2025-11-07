@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en" class="langen">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>QuizMaster - Browse Quizzes</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --background: #ffffff;
+        --foreground: oklch(0.145 0 0);
+        --card: #ffffff;
+        --card-foreground: oklch(0.145 0 0);
+        --primary: #030213;
+        --primary-foreground: oklch(1 0 0);
+        --muted-foreground: #717182;
+        --border: rgba(0, 0, 0, 0.1);
+        --destructive: #d4183d;
+      }
+      body {
+        font-family: 'Inter', sans-serif;
+        background-color: var(--background);
+        color: var(--foreground);
+        transition: background-color 0.3s, color 0.3s;
+      }
+      header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        background: var(--card);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        height: 4rem;
+        padding: 0 1.5rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        z-index: 50;
+      }
+      header h1 {
+        font-weight: 700;
+        font-size: 1.25rem;
+      }
+      nav a {
+        margin-left: 1rem;
+        font-weight: 500;
+        color: var(--foreground);
+        text-decoration: none;
+      }
+      nav a.active,
+      nav a:hover {
+        color: var(--primary);
+        font-weight: 700;
+      }
+      main {
+        padding-top: 5rem;
+        max-width: 72rem;
+        margin: 0 auto;
+        padding-left: 1.5rem;
+        padding-right: 1.5rem;
+      }
+      .card {
+        background-color: var(--card);
+        border: 1px solid var(--border);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+        border-radius: 1rem;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        color: var(--card-foreground);
+      }
+      .filter-group {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 2rem;
+      }
+      select,
+      input[type='text'] {
+        border: 1px solid var(--border);
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        font-size: 1rem;
+        width: 200px;
+      }
+      .quiz-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 1.5rem;
+      }
+      .quiz-card {
+        background: var(--card);
+        border-radius: 1rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+        padding: 1rem;
+        transition: box-shadow 0.3s ease;
+      }
+      .quiz-card:hover {
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+      }
+      .quiz-category {
+        font-weight: 600;
+        font-size: 0.75rem;
+        color: #a855f7;
+        margin-bottom: 0.5rem;
+      }
+      .quiz-title {
+        font-weight: 700;
+        font-size: 1.25rem;
+        margin-bottom: 0.5rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .quiz-description {
+        font-size: 0.875rem;
+        color: var(--muted-foreground);
+        margin-bottom: 1rem;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      .quiz-meta {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.875rem;
+        margin-bottom: 1rem;
+      }
+      .btn-primary {
+        background-color: var(--primary);
+        color: var(--primary-foreground);
+        font-weight: 600;
+        border-radius: 0.5rem;
+        padding: 0.5rem 1rem;
+        width: 100%;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: background-color 0.2s ease;
+      }
+      .btn-primary:hover {
+        background-color: #050418;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Browse</h1>
+      <nav>
+        <a href="dashboard.html">Dashboard</a>
+        <a href="browse.html" class="active">Browse</a>
+        <a href="profile.html">Profile</a>
+        <a href="results.html">Results</a>
+        <a href="feedback.html">Feedback</a>
+      </nav>
+    </header>
+    <main>
+      <div class="filter-group">
+        <input type="text" id="search" placeholder="Search quizzes…" />
+        <select id="category-filter">
+          <option value="">All Categories</option>
+          <option value="Programming">Programming</option>
+          <option value="Web Design">Web Design</option>
+          <option value="Database">Database</option>
+        </select>
+        <select id="difficulty-filter">
+          <option value="">All Difficulties</option>
+          <option value="Easy">Easy</option>
+          <option value="Medium">Medium</option>
+          <option value="Hard">Hard</option>
+        </select>
+      </div>
+      <div class="quiz-grid" id="quiz-list">
+        <!-- Quizzes loaded by script -->
+      </div>
+    </main>
+    <script>
+      const quizzes = [
+        {
+          id: "quiz-js-01",
+          title: "Advanced JavaScript",
+          category: "Programming",
+          difficulty: "Medium",
+          description: "Deep dive into JS.",
+          questions: 10,
+        },
+        {
+          id: "quiz-css-01",
+          title: "CSS Grid Layout",
+          category: "Web Design",
+          difficulty: "Easy",
+          description: "Master grid layouts.",
+          questions: 8,
+        },
+        {
+          id: "quiz-db-01",
+          title: "Database Basics",
+          category: "Database",
+          difficulty: "Medium",
+          description: "Introduction to SQL.",
+          questions: 12,
+        },
+        {
+          id: "quiz-react-01",
+          title: "React Advanced",
+          category: "Programming",
+          difficulty: "Hard",
+          description: "Deep dive into React JS.",
+          questions: 15,
+        },
+        {
+          id: "quiz-html-01",
+          title: "HTML and Accessibility",
+          category: "Web Design",
+          difficulty: "Easy",
+          description: "Learn accessible HTML.",
+          questions: 7,
+        },
+      ];
+
+      const quizList = document.getElementById("quiz-list");
+      const searchInput = document.getElementById("search");
+      const categoryFilter = document.getElementById("category-filter");
+      const difficultyFilter = document.getElementById("difficulty-filter");
+
+      function renderQuizzes(filtered) {
+        quizList.innerHTML = "";
+        if (filtered.length === 0) {
+          quizList.innerHTML = "<p>No quizzes found.</p>";
+          return;
+        }
+        filtered.forEach((quiz) => {
+          const card = document.createElement("div");
+          card.className = "quiz-card";
+          card.innerHTML = `
+            <div class="quiz-category">${quiz.category}</div>
+            <div class="quiz-title">${quiz.title}</div>
+            <div class="quiz-description">${quiz.description}</div>
+            <div class="quiz-meta">
+              <span>${quiz.questions} Questions</span>
+              <span>${quiz.difficulty}</span>
+            </div>
+            <button class="btn-primary" onclick="startQuiz('${quiz.id}')">Start Quiz</button>
+          `;
+          quizList.appendChild(card);
+        });
+      }
+
+      function filterQuizzes() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const category = categoryFilter.value;
+        const difficulty = difficultyFilter.value;
+
+        const filtered = quizzes.filter((quiz) => {
+          return (
+            (category === "" || quiz.category === category) &&
+            (difficulty === "" || quiz.difficulty === difficulty) &&
+            (quiz.title.toLowerCase().includes(searchTerm) ||
+              quiz.description.toLowerCase().includes(searchTerm))
+          );
+        });
+        renderQuizzes(filtered);
+      }
+
+      function startQuiz(quizId) {
+        window.location.href = `quiz.html?id=${encodeURIComponent(quizId)}`;
+      }
+
+      searchInput.addEventListener("input", filterQuizzes);
+      categoryFilter.addEventListener("change", filterQuizzes);
+      difficultyFilter.addEventListener("change", filterQuizzes);
+
+      renderQuizzes(quizzes);
+    </script>
+  </body>
+</html>

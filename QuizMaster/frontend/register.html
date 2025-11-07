@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en" class="langen">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>QuizMaster - Results</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --background: #ffffff;
+      --foreground: oklch(0.145 0 0);
+      --card: #ffffff;
+      --card-foreground: oklch(0.145 0 0);
+      --primary: #030213;
+      --primary-foreground: oklch(1 0 0);
+      --muted-foreground: #717182;
+      --border: rgba(0, 0, 0, 0.1);
+      --destructive: #d4183d;
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--background);
+      color: var(--foreground);
+      transition: background-color 0.3s, color 0.3s;
+    }
+    header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      height: 4rem;
+      padding: 0 1.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      z-index: 50;
+    }
+    nav a {
+      margin-left: 1rem;
+      font-weight: 500;
+      color: var(--foreground);
+      text-decoration: none;
+    }
+    nav a.active, nav a:hover {
+      color: var(--primary);
+      font-weight: 700;
+    }
+    main {
+      padding-top: 5rem;
+      max-width: 48rem;
+      margin: 0 auto;
+      padding-left: 1.5rem;
+      padding-right: 1.5rem;
+    }
+    .card {
+      background-color: var(--card);
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+      border-radius: 1rem;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      color: var(--card-foreground);
+    }
+    .result-summary {
+      font-size: 1.125rem;
+      margin-bottom: 1rem;
+    }
+    .result-summary strong {
+      font-weight: 700;
+    }
+    .question-block {
+      border-top: 1px solid var(--border);
+      padding: 1rem 0 0 0;
+      margin-top: 1rem;
+    }
+    .question-block h3 {
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+    .correct {
+      color: #16a34a;
+      font-weight: 600;
+    }
+    .incorrect {
+      color: #dc2626;
+      font-weight: 600;
+    }
+    button.btn-primary {
+      background-color: var(--primary);
+      color: var(--primary-foreground);
+      font-weight: 600;
+      border-radius: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      cursor: pointer;
+      font-size: 1rem;
+      border: none;
+      display: block;
+      margin: 2rem auto;
+      transition: background-color 0.2s ease;
+    }
+    button.btn-primary:hover {
+      background-color: #050418;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Results</h1>
+    <nav>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="browse.html">Browse</a>
+      <a href="profile.html">Profile</a>
+      <a href="results.html" class="active">Results</a>
+      <a href="feedback.html">Feedback</a>
+    </nav>
+  </header>
+  <main>
+    <div class="card" id="results-container">
+      <h2>Quiz Results Summary</h2>
+      <p class="result-summary"><strong>Quiz:</strong> Loading...</p>
+      <p class="result-summary"><strong>Score:</strong> --</p>
+      <p class="result-summary"><strong>Percentage:</strong> --</p>
+      <p class="result-summary"><strong>Result:</strong> --</p>
+    </div>
+    <button class="btn-primary" onclick="window.location.href='dashboard.html'">Back to Dashboard</button>
+  </main>
+  <script>
+    // Read quiz id and user answers from sessionStorage or similar
+    // For demo, generating dummy results dynamically matching quiz questions
+    const params = new URLSearchParams(window.location.search);
+    const quizId = params.get("id") || "quiz-js-01";
+
+    const quizzes = {
+      "quiz-js-01": {
+        title: "Advanced JavaScript",
+        questionsCount: 10,
+        // Randomly generated user answers and correct
+        questions: Array.from({length:10}).map((_, i) => ({
+          text: `Sample JS question #${i + 1}`,
+          userAnswer: Math.floor(Math.random() * 4),
+          correctAnswer: Math.floor(Math.random() * 4)
+        })),
+      },
+      "quiz-css-01": {
+        title: "CSS Grid Layout",
+        questionsCount: 8,
+        questions: Array.from({length:8}).map((_, i) => ({
+          text: `Sample CSS question #${i + 1}`,
+          userAnswer: Math.floor(Math.random() * 4),
+          correctAnswer: Math.floor(Math.random() * 4)
+        })),
+      },
+      "quiz-db-01": {
+        title: "Database Basics",
+        questionsCount: 12,
+        questions: Array.from({length: 12}).map((_, i) => ({
+          text: `Sample DB question #${i + 1}`,
+          userAnswer: Math.floor(Math.random() * 4),
+          correctAnswer: Math.floor(Math.random() * 4)
+        })),
+      }
+    };
+
+    const quiz = quizzes[quizId];
+    if (!quiz) {
+      alert("Quiz not found");
+      window.location.href = "browse.html";
+    }
+
+    // Compute score
+    let correctCount = 0;
+    quiz.questions.forEach(q => {
+      if(q.userAnswer === q.correctAnswer) correctCount++;
+    });
+    let percentage = Math.floor((correctCount / quiz.questionsCount) * 100);
+    let passFail = percentage >= 70 ? "Pass" : "Fail";
+
+    const container = document.getElementById("results-container");
+    container.innerHTML = `
+      <h2>Quiz Results Summary</h2>
+      <p class="result-summary"><strong>Quiz:</strong> ${quiz.title}</p>
+      <p class="result-summary"><strong>Score:</strong> ${correctCount} / ${quiz.questionsCount}</p>
+      <p class="result-summary"><strong>Percentage:</strong> ${percentage}%</p>
+      <p class="result-summary"><strong>Result:</strong> <span class="${passFail === "Pass" ? "correct" : "incorrect"}">${passFail}</span></p>
+      ${quiz.questions.map((q, idx) => `
+        <div class="question-block">
+          <h3>${idx+1}. ${q.text}</h3>
+          <p>Your answer: <span class="${q.userAnswer === q.correctAnswer ? "correct" : "incorrect"}">Option ${q.userAnswer + 1}</span></p>
+          <p>Correct answer: Option ${q.correctAnswer + 1}</p>
+        </div>
+      `).join('')}
+    `;
+  </script>
+</body>
+</html>

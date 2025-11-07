@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en" class="langen">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>QuizMaster - Quiz</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --background: #ffffff;
+      --foreground: oklch(0.145 0 0);
+      --card: #ffffff;
+      --card-foreground: oklch(0.145 0 0);
+      --primary: #030213;
+      --primary-foreground: oklch(1 0 0);
+      --muted-foreground: #717182;
+      --border: rgba(0, 0, 0, 0.1);
+      --destructive: #d4183d;
+    }
+    body {
+      font-family: "Inter", sans-serif;
+      background-color: var(--background);
+      color: var(--foreground);
+      transition: background-color 0.3s, color 0.3s;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      height: 4rem;
+      padding: 0 1.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      z-index: 50;
+    }
+    nav a {
+      margin-left: 1rem;
+      font-weight: 500;
+      color: var(--foreground);
+      text-decoration: none;
+    }
+    nav a.active, nav a:hover {
+      color: var(--primary);
+      font-weight: 700;
+    }
+    main {
+      padding-top: 5rem;
+      max-width: 48rem;
+      margin: 0 auto;
+      padding-left: 1.5rem;
+      padding-right: 1.5rem;
+    }
+    .card {
+      background-color: var(--card);
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+      border-radius: 1rem;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      color: var(--card-foreground);
+    }
+    .question-text {
+      font-weight: 700;
+      font-size: 1.25rem;
+      margin-bottom: 1rem;
+    }
+    .option {
+      background: var(--background);
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    .option:hover {
+      background-color: #e0e7ff;
+    }
+    .option.selected {
+      background-color: var(--primary);
+      color: var(--primary-foreground);
+      border-color: var(--primary);
+    }
+    .navigation-buttons {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 1rem;
+    }
+    button {
+      background-color: var(--primary);
+      color: var(--primary-foreground);
+      border: none;
+      border-radius: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 600;
+      transition: background-color 0.2s ease;
+      min-width: 100px;
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    button:hover:not(:disabled) {
+      background-color: #050418;
+    }
+    #timer {
+      font-weight: 600;
+      font-size: 1.125rem;
+      margin-bottom: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Quiz</h1>
+    <nav>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="browse.html">Browse</a>
+      <a href="profile.html">Profile</a>
+      <a href="results.html">Results</a>
+      <a href="feedback.html">Feedback</a>
+    </nav>
+  </header>
+  <main>
+    <div class="card">
+      <div id="quiz-title" class="text-center text-2xl font-bold mb-6">Loading Quiz...</div>
+      <div id="timer">Time Left: 00:00</div>
+      <div id="question-container" class="mb-6"></div>
+      <div class="navigation-buttons">
+        <button id="prev-btn" disabled>Previous</button>
+        <button id="next-btn" disabled>Next</button>
+        <button id="submit-btn" disabled>Submit</button>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Shuffle helper
+    function shuffleArray(arr) {
+      for(let i = arr.length -1; i > 0; i--) {
+        let j = Math.floor(Math.random() * (i+1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    // Sample quizzes mapped by id
+    const availableQuizzes = {
+      "quiz-js-01": {
+        title: "Advanced JavaScript",
+        durationSeconds: 300,
+        questions: Array.from({length: 10}).map((_,i) => ({
+          text: `Sample JavaScript question for #${i+1}`,
+          options: shuffleArray(["Option A", "Option B", "Option C", "Option D"]),
+          correct: Math.floor(Math.random() * 4)
+        }))
+      },
+      "quiz-css-01": {
+        title: "CSS Grid Layout",
+        durationSeconds: 240,
+        questions: Array.from({length: 8}).map((_,i) => ({
+          text: `Sample CSS question for #${i+1}`,
+          options: shuffleArray(["Option A", "Option B", "Option C", "Option D"]),
+          correct: Math.floor(Math.random() * 4)
+        }))
+      },
+      "quiz-db-01": {
+        title: "Database Basics",
+        durationSeconds: 360,
+        questions: Array.from({length: 12}).map((_,i) => ({
+          text: `Sample Database question for #${i+1}`,
+          options: shuffleArray(["Option A", "Option B", "Option C", "Option D"]),
+          correct: Math.floor(Math.random() * 4)
+        }))
+      }
+    };
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const quizId = urlParams.get('id');
+
+    if (!quizId || !availableQuizzes[quizId]) {
+      alert("Quiz not found or invalid ID.");
+      window.location.href = "browse.html";
+    }
+
+    const quiz = availableQuizzes[quizId];
+    // Randomize questions (shuffled order)
+    let shuffledQuestions = shuffleArray([...quiz.questions]);
+
+    let currentQuestionIndex = 0;
+    let userAnswers = Array(shuffledQuestions.length).fill(null);
+    let timer = quiz.durationSeconds;
+    let timerInterval = null;
+
+    const quizTitleEl = document.getElementById("quiz-title");
+    const questionContainer = document.getElementById("question-container");
+    const timerEl = document.getElementById("timer");
+    const prevBtn = document.getElementById("prev-btn");
+    const nextBtn = document.getElementById("next-btn");
+    const submitBtn = document.getElementById("submit-btn");
+
+    quizTitleEl.textContent = quiz.title;
+
+    function renderQuestion(index) {
+      const q = shuffledQuestions[index];
+      questionContainer.innerHTML = `
+        <div class="question-text">${q.text}</div>
+        <div>
+          ${q.options.map((opt, i) => `<div class="option" data-index="${i}">${opt}</div>`).join('')}
+        </div>
+      `;
+
+      const optionEls = questionContainer.querySelectorAll('.option');
+      optionEls.forEach(el => {
+        el.addEventListener('click', () => {
+          userAnswers[index] = Number(el.dataset.index);
+          optionEls.forEach(opt => opt.classList.remove('selected'));
+          el.classList.add('selected');
+          checkSubmitEnable();
+        });
+      });
+
+      if (userAnswers[index] !== null) {
+        optionEls[userAnswers[index]].classList.add('selected');
+      }
+
+      prevBtn.disabled = index === 0;
+      nextBtn.disabled = index === shuffledQuestions.length - 1;
+
+      submitBtn.style.display = index === shuffledQuestions.length - 1 ? 'inline-block' : 'none';
+      nextBtn.style.display = index === shuffledQuestions.length - 1 ? 'none' : 'inline-block';
+    }
+
+    function checkSubmitEnable() {
+      submitBtn.disabled = userAnswers.includes(null);
+    }
+
+    prevBtn.addEventListener('click', () => {
+      if (currentQuestionIndex > 0) {
+        currentQuestionIndex--;
+        renderQuestion(currentQuestionIndex);
+      }
+    });
+
+    nextBtn.addEventListener('click', () => {
+      if (currentQuestionIndex < shuffledQuestions.length - 1) {
+        currentQuestionIndex++;
+        renderQuestion(currentQuestionIndex);
+      }
+    });
+
+    submitBtn.addEventListener('click', () => {
+      if(userAnswers.includes(null)){
+        alert("Please answer all questions before submitting.");
+        return;
+      }
+      clearInterval(timerInterval);
+      alert("Quiz submitted! Implement submit logic here.");
+      window.location.href = 'results.html';
+    });
+
+    function updateTimer() {
+      const minutes = Math.floor(timer / 60);
+      const seconds = timer % 60;
+      timerEl.textContent = `Time Left: ${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}`;
+      if (timer <= 0) {
+        clearInterval(timerInterval);
+        alert("Time's up! Submitting quiz.");
+        submitBtn.click();
+      }
+      timer--;
+    }
+
+    renderQuestion(currentQuestionIndex);
+    checkSubmitEnable();
+    timerInterval = setInterval(updateTimer, 1000);
+  </script>
+</body>
+</html>
