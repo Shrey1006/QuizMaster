@@ -1,0 +1,2222 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuizMaster - Pure Frontend SPA</title>
+    <!-- Load Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.12.7/recharts.min.js"></script>
+
+    <style>
+        /* --- CSS Variables Integrated from globals.css --- */
+        
+        :root {
+            /* Core Colors */
+            --background: #ffffff;
+            --foreground: oklch(0.145 0 0);
+            /* Main text color */
+            --card: #ffffff;
+            --card-foreground: oklch(0.145 0 0);
+            --primary: #030213;
+            /* Dark/Black primary */
+            --primary-foreground: oklch(1 0 0);
+            /* White on primary */
+            --muted-foreground: #717182;
+            --border: rgba(0, 0, 0, 0.1);
+            --destructive: #d4183d;
+        }
+
+        .dark {
+            --background: oklch(0.145 0 0);
+            --foreground: oklch(0.985 0 0);
+            --card: oklch(0.145 0 0);
+            --card-foreground: oklch(0.985 0 0);
+            --primary: oklch(0.985 0 0);
+            --primary-foreground: oklch(0.205 0 0);
+            --muted-foreground: oklch(0.708 0 0);
+            --border: oklch(0.269 0 0);
+            --destructive: oklch(0.396 0.141 25.723);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background);
+            color: var(--foreground);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* Utility classes updated to use new variables */
+        .card {
+            background-color: var(--card);
+            border: 1px solid var(--border);
+        }
+
+        /* Adjusted input styling for consistent padding when an icon is NOT present (like in the modal) */
+        .input:not(.has-icon),
+        .textarea:not(.has-icon),
+        .select-trigger:not(.has-icon) {
+            padding-left: 1rem !important;
+            /* Default minimal padding */
+        }
+
+        .input,
+        .textarea,
+        .select-trigger {
+            border: 1px solid var(--border);
+            background-color: var(--background);
+            color: var(--foreground);
+            padding-left: 2.5rem;
+            /* Default space for icon, overridden by :not(.has-icon) */
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: var(--primary-foreground);
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        .btn-primary:hover {
+            /* Using filter for a simple demonstration of hover effect */
+            filter: brightness(0.85);
+        }
+
+        /* Custom styles for Feedback page */
+        .feedback-gradient-bg {
+            background: linear-gradient(145deg, #f5f3ff, #fcf5ff);
+        }
+
+        .dark .feedback-gradient-bg {
+            background: linear-gradient(145deg, #1f2937, #111827);
+        }
+
+        .feedback-header-gradient {
+            background-image: linear-gradient(to right, #8b5cf6, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+
+        /* Custom shaker for error */
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-10px);
+            }
+
+            75% {
+                transform: translateX(10px);
+            }
+        }
+
+        .animate-shake {
+            animation: shake 0.3s ease-in-out;
+        }
+
+        /* Recharts placeholder */
+        .chart-placeholder {
+            min-height: 250px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--background);
+            border: 1px dashed var(--border);
+            border-radius: 0.5rem;
+            color: var(--muted-foreground);
+            font-size: 0.875rem;
+        }
+
+        /* Tabs Styling for Profile Page */
+        .tabs-list {
+            display: flex;
+            background-color: rgba(0, 0, 0, 0.05);
+            /* Light background for tabs */
+            border-radius: 0.5rem;
+        }
+
+        .dark .tabs-list {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .tabs-trigger {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 0.5rem;
+            transition: background-color 0.2s, color 0.2s;
+            text-align: center;
+        }
+
+        .tabs-trigger:not(.tabs-active):hover {
+            background-color: rgba(0, 0, 0, 0.03);
+        }
+
+        .dark .tabs-trigger:not(.tabs-active):hover {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .tabs-active {
+            background-color: var(--card);
+            /* Matches card background */
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            color: var(--primary);
+        }
+
+        .dark .tabs-active {
+            color: var(--foreground);
+            box-shadow: 0 1px 3px 0 rgba(255, 255, 255, 0.05), 0 1px 2px 0 rgba(255, 255, 255, 0.03);
+        }
+
+        /* CSS for Score Progress Ring */
+        .score-ring {
+            transform: rotate(-90deg);
+        }
+
+        #add-quiz-modal>div {
+            background: #24292f !important;
+            /* dark grey background */
+            color: #f3f4f6 !important;
+            /* light text color */
+        }
+
+        #add-quiz-modal label,
+        #add-quiz-modal input,
+        #add-quiz-modal textarea,
+        #add-quiz-modal select {
+            color: #f3f4f6 !important;
+        }
+
+        #add-quiz-modal,
+        #add-quiz-modal * {
+            color: #f3f4f6 !important;
+            /* very light gray/white */
+        }
+
+        /* Ensure input and textarea text appears white */
+        #add-quiz-modal input,
+        #add-quiz-modal textarea,
+        #add-quiz-modal select {
+            color: #555353 !important;
+        }
+
+        /* Ensure label text is white */
+        #add-quiz-modal label {
+            color: #666363 !important;
+        }
+
+        /* Ensure placeholder text is bright (white or light gray) */
+        #add-quiz-modal input::placeholder,
+        #add-quiz-modal textarea::placeholder {
+            color: #4f535a !important;
+            opacity: 1 !important;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Main Application Container -->
+    <div id="root" class="min-h-screen flex flex-col">
+        <!-- Navigation Header (Always Visible) -->
+        <header id="header-nav" class="fixed top-0 left-0 right-0 h-16 bg-card border-b border-border shadow-sm z-50">
+            <!-- Content dynamically generated by renderHeader() -->
+        </header>
+
+        <!-- Main Content Area -->
+        <main id="app" class="flex-1 mt-16"></main>
+
+        <!-- Toast/Notification Area -->
+        <div id="toast-container" class="fixed bottom-4 right-4 z-[100]"></div>
+    </div>
+
+    <!-- The Single-File JavaScript Engine -->
+    <script>
+        // --- 1. CONFIGURATION AND DATA ---
+
+        // --- BACKEND INTEGRATION: BASE URL ---
+        const BASE_URL = 'http://127.0.0.1:5001/api';
+        const LLM_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key='; // API key assumed to be injected by environment
+        const API_KEY = ""; // Placeholder for Canvas environment
+
+
+        // Frontend cache for dynamic data
+        let mockQuizzes = [];
+        let quizHistory = [];
+
+        // --- 2. GLOBAL APP STATE & UTILITIES ---
+
+        const appState = {
+            isAuthenticated: false,
+            user: null,
+            token: null,
+            currentQuizId: null,
+            currentQuestionIndex: 0,
+            answers: {},
+            timeRemaining: 0,
+
+            // Profile Data (Initial State for UI rendering, updated on login)
+            profileData: {
+                fullName: 'Guest User', email: '', username: 'guest', phone: '', bio: '',
+            },
+            profileActiveTab: 'general',
+            profileSecurity: {
+                currentPassword: '', newPassword: '', confirmPassword: '',
+            },
+
+            // Admin Quiz Creation State
+            admin: {
+                showAddQuiz: false,
+                activeModalTab: 'manual', // 'manual' or 'generate'
+                isGenerating: false,
+                generatedQuestions: [],
+                newQuiz: {
+                    title: '', description: '', category: 'Programming', difficulty: 'Medium', duration: 15, passingScore: 70, questions: [],
+                },
+                newQuestion: {
+                    text: '', options: ['', '', '', ''], correctAnswer: 0, explanation: '',
+                },
+                generationConfig: {
+                    topic: '',
+                    numQuestions: 5,
+                    difficulty: 'Medium'
+                }
+            }
+        };
+
+        let timerInterval = null;
+
+        // --- Auth Functions (Updated for Backend) ---
+        const auth = {
+            login: async (usernameOrEmail, password) => {
+                try {
+                    const response = await fetch(`${BASE_URL}/login`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ usernameOrEmail, password }),
+                    });
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        const user = data.user;
+                        appState.isAuthenticated = true;
+                        appState.token = data.token;
+                        appState.user = {
+                            ...user,
+                            // Mock stats (since backend doesn't store them yet)
+                            quizzesTaken: 12, averageScore: 78, bestScore: 92, timeSpent: 24,
+                            avatar: `https://placehold.co/80x80/d9f99d/065f46?text=${user.fullName.charAt(0)}`
+                        };
+
+                        // Initialize profile data from fetched user data
+                        appState.profileData = {
+                            fullName: appState.user.fullName,
+                            email: appState.user.email || `${appState.user.username}@example.com`,
+                            username: appState.user.username,
+                            phone: '+1 (555) 000-0000',
+                            bio: 'Tell us about yourself...',
+                        };
+                        return true;
+                    } else {
+                        return false;
+                    }
+                } catch (error) {
+                    console.error('Login API error:', error);
+                    return false;
+                }
+            },
+
+            register: async (details) => {
+                try {
+                    const response = await fetch(`${BASE_URL}/register`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            fullName: details.fullName,
+                            email: details.email,
+                            username: details.username,
+                            password: 'mock_password'
+                        }),
+                    });
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        appState.isAuthenticated = true;
+                        appState.token = data.token;
+                        appState.user = {
+                            ...data.user,
+                            quizzesTaken: 0, averageScore: 0, bestScore: 0, timeSpent: 0,
+                            avatar: `https://placehold.co/80x80/d9f99d/065f46?text=${data.user.fullName.charAt(0)}`
+                        };
+                        return true;
+                    } else {
+                        return false;
+                    }
+                } catch (error) {
+                    console.error('Registration API error:', error);
+                    return false;
+                }
+            },
+
+            logout: () => {
+                appState.isAuthenticated = false;
+                appState.user = null;
+                appState.token = null;
+                navigate('/login');
+            },
+        };
+
+        // --- UI Utility Functions ---
+
+        /** Shows a temporary toast message */
+        function toast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const color = type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500';
+            const html = `
+                <div class="${color} text-white p-3 rounded-lg shadow-xl mb-3 transition-opacity duration-300 transform translate-y-0 opacity-100">
+                    ${message}
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', html);
+            const newToast = container.lastElementChild;
+
+            setTimeout(() => {
+                newToast.classList.add('opacity-0', 'translate-y-2');
+                newToast.addEventListener('transitionend', () => newToast.remove());
+            }, 3000);
+        }
+
+        /** Formats time from seconds to m:ss */
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins}m ${secs.toString().padStart(2, '0')}s`;
+        }
+
+        /** Toggles dark mode class on the HTML element */
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+            const isDark = document.documentElement.classList.contains('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        }
+
+        // --- 3. ROUTING & RENDERING ---
+
+        /** Handles navigation based on the URL hash */
+        function navigate(path) {
+            if (path.startsWith('/quiz/')) {
+                const parts = path.split('/');
+                appState.currentQuizId = parts[2];
+                window.location.hash = path;
+            } else {
+                window.location.hash = path;
+            }
+        }
+
+        /** Main routing function */
+        async function router() {
+            const path = window.location.hash.slice(1) || '/login';
+            const app = document.getElementById('app');
+            app.innerHTML = '';
+
+            const isAuthRoute = path === '/login' || path === '/register' || path === '/forgot-password';
+            const isAdminRoute = path === '/admin';
+            const isAuthenticated = appState.isAuthenticated;
+
+            renderHeader(path);
+
+            if (!isAuthenticated && !isAuthRoute) {
+                return navigate('/login');
+            }
+            if (isAuthenticated && isAdminRoute && appState.user.role !== 'admin') {
+                return navigate('/dashboard');
+            }
+
+            // --- BACKEND INTEGRATION: Fetch quizzes for data-dependent pages ---
+            if (isAuthenticated && (path === '/dashboard' || path === '/browse' || path === '/admin' || path.startsWith('/quiz/'))) {
+                try {
+                    const response = await fetch(`${BASE_URL}/quizzes`);
+                    const data = await response.json();
+                    if (response.ok) {
+                        mockQuizzes = data;
+                    }
+                } catch (error) {
+                    // console.error('Could not connect to backend. Using old mock data if available.', error);
+                    // toast('Could not load quizzes from backend.', 'error');
+                }
+            }
+
+
+            if (path === '/login') return renderLogin();
+            if (path === '/register') return renderRegister();
+            if (path === '/dashboard') return renderDashboard();
+            if (path === '/browse') return renderBrowse();
+            if (path.startsWith('/quiz/')) return renderQuizInterface();
+            if (path.startsWith('/results/')) return renderResults();
+            if (path === '/results') return renderResultsHistory();
+            if (path === '/profile') return renderProfile();
+            if (path === '/feedback') return renderFeedback();
+            if (path === '/admin') return renderAdminDashboard();
+
+            app.innerHTML = '<div class="p-8 text-center text-xl text-red-500">404 - Page Not Found</div>';
+        }
+
+        // --- 4. HEADER RENDERER ---
+        function renderHeader(currentPath) {
+            const nav = document.getElementById('header-nav');
+            const user = appState.user;
+            const isDark = document.documentElement.classList.contains('dark');
+
+            let navLinks = '';
+            let profileSection = '';
+
+            if (appState.isAuthenticated) {
+                const isAdmin = user.role === 'admin';
+                const links = isAdmin
+                    ? [{ path: '/admin', name: 'Admin Dashboard' }]
+                    : [
+                        { path: '/dashboard', name: 'Dashboard' },
+                        { path: '/browse', name: 'Quizzes' },
+                        { path: '/results', name: 'Results' },
+                        { path: '/profile', name: 'Profile' },
+                        { path: '/feedback', name: 'Feedback' },
+                    ];
+
+                navLinks = links.map(link => `
+                    <button onclick="navigate('${link.path}')" class="px-3 py-2 text-sm font-medium rounded-md transition-colors ${currentPath === link.path ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300' : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
+                    }">
+                        ${link.name}
+                    </button>
+                `).join('');
+
+                profileSection = `
+                    <div class="flex items-center gap-2">
+                        <!-- Dark Mode Toggle -->
+                        <button onclick="toggleDarkMode()" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" title="Toggle Dark Mode">
+                            ${isDark
+                        ? `<svg class="h-6 w-6 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>`
+                        : `<svg class="h-6 w-6 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>`
+                    }
+                        </button>
+
+                        <img src="${user.avatar}" alt="${user.fullName}" class="h-8 w-8 rounded-full border-2 border-primary" />
+                        <span class="text-sm font-medium hidden md:block">${user.fullName}</span>
+                        <button onclick="auth.logout()" class="ml-4 text-sm text-red-500 hover:text-red-700">Logout</button>
+                    </div>
+                `;
+            } else {
+                profileSection = `
+                    <button onclick="toggleDarkMode()" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" title="Toggle Dark Mode">
+                        ${isDark
+                        ? `<svg class="h-6 w-6 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>`
+                        : `<svg class="h-6 w-6 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>`
+                    }
+                    </button>
+                `;
+
+                navLinks = `
+                    <button onclick="navigate('/login')" class="px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">Login</button>
+                    <button onclick="navigate('/register')" class="btn-primary px-3 py-1.5 text-sm font-medium rounded-md">Register</button>
+                `;
+            }
+
+            nav.innerHTML = `
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <div class="text-xl font-extrabold text-primary cursor-pointer" onclick="navigate('${appState.isAuthenticated ? '/dashboard' : '/login'}')">QuizMaster</div>
+                        <nav class="hidden sm:flex space-x-1">
+                            ${navLinks}
+                        </nav>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        ${profileSection}
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- 5. SCREEN RENDER FUNCTIONS ---
+
+        // --- LOGIN SCREEN ---
+        function renderLogin() {
+            const app = document.getElementById('app');
+            app.innerHTML = `
+                <div class="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12">
+                    <div class="w-full max-w-md p-8 card rounded-xl shadow-2xl" id="login-form">
+                        <div class="text-center mb-8">
+                            <h1 class="text-2xl font-bold mb-2">Welcome Back</h1>
+                            <p class="text-sm text-muted-foreground">Sign in to continue your learning journey</p>
+                        </div>
+                        <form id="login-form-content" class="space-y-5">
+                            <div class="space-y-2">
+                                <label for="usernameOrEmail" class="block text-sm font-medium">Username or Email</label>
+                                <!-- FIX: Removed redundant 'has-icon' class and inline style for correct padding -->
+                                <input id="usernameOrEmail" type="text" placeholder="Enter your username or email" required class="input w-full p-2 rounded-md focus:ring-2 focus:ring-primary" />
+                            </div>
+                            <div class="space-y-2">
+                                <label for="password" class="block text-sm font-medium">Password</label>
+                                <!-- FIX: Removed redundant 'has-icon' class and inline style for correct padding -->
+                                <input id="password" type="password" placeholder="Enter your password" required class="input w-full p-2 rounded-md focus:ring-2 focus:ring-primary" />
+                            </div>
+                            <div class="flex items-center justify-between text-sm">
+                                <div></div>
+                                <a href="#" class="text-primary hover:underline">Forgot password?</a>
+                            </div>
+                            <button type="submit" class="btn-primary w-full py-2 rounded-md font-semibold">Sign In</button>
+                            <p class="text-center text-sm text-muted-foreground">
+                                Don't have an account? <button type="button" onclick="navigate('/register')" class="text-primary hover:underline">Sign up</button>
+                            </p>
+                        </form>
+                        <div class="mt-6 p-4 bg-blue-50 dark:bg-gray-700 rounded-lg text-xs">
+                            <p>💡 Demo Hint: Use **admin** for admin panel, or anything else (e.g., **johndoe**) for user access.</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('login-form-content').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const username = document.getElementById('usernameOrEmail').value;
+                const password = document.getElementById('password').value;
+
+                const success = await auth.login(username, password);
+
+                if (success) {
+                    toast('Login successful!', 'success');
+                    if (appState.user.role === 'admin') {
+                        navigate('/admin');
+                    } else {
+                        navigate('/dashboard');
+                    }
+                } else {
+                    toast('Login failed. Invalid credentials.', 'error');
+                    document.getElementById('login-form').classList.add('animate-shake');
+                    setTimeout(() => document.getElementById('login-form').classList.remove('animate-shake'), 500);
+                }
+            });
+        }
+
+        // --- REGISTER SCREEN (SKELETAL) ---
+        function renderRegister() {
+            const app = document.getElementById('app');
+            app.innerHTML = `
+                <div class="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12">
+                    <div class="w-full max-w-md p-8 card rounded-xl shadow-2xl">
+                        <div class="text-center mb-8">
+                            <h1 class="text-2xl font-bold mb-2">Create Account</h1>
+                            <p class="text-sm text-muted-foreground">Join the learning platform</p>
+                        </div>
+                        <form id="register-form-content" class="space-y-5">
+                            <!-- FIX: Removed redundant 'has-icon' class and inline style for correct padding -->
+                            <input type="text" placeholder="Full Name" required class="input w-full p-2 rounded-md" id="reg-fullName" />
+                            <!-- FIX: Removed redundant 'has-icon' class and inline style for correct padding -->
+                            <input type="text" placeholder="Username" required class="input w-full p-2 rounded-md" id="reg-username" />
+                            <!-- FIX: Removed redundant 'has-icon' class and inline style for correct padding -->
+                            <input type="email" placeholder="Email" required class="input w-full p-2 rounded-md" id="reg-email" />
+                            <!-- FIX: Removed redundant 'has-icon' class and inline style for correct padding -->
+                            <input type="password" placeholder="Password (Mocked)" required class="input w-full p-2 rounded-md" />
+                            <!-- FIX: Removed redundant 'has-icon' class and inline style for correct padding -->
+                            <input type="password" placeholder="Confirm Password (Mocked)" required class="input w-full p-2 rounded-md" />
+                            <div class="flex items-center text-sm"><input type="checkbox" required class="mr-2"/> I agree to terms</div>
+                            <button type="submit" class="btn-primary w-full py-2 rounded-md font-semibold">Register</button>
+                            <p class="text-center text-sm text-muted-foreground">
+                                Already have an account? <button type="button" onclick="navigate('/login')" class="text-primary hover:underline">Sign In</button>
+                            </p>
+                        </form>
+                    </div>
+                </div>
+            `;
+            document.getElementById('register-form-content').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const fullName = document.getElementById('reg-fullName').value;
+                const username = document.getElementById('reg-username').value;
+                const email = document.getElementById('reg-email').value;
+
+                const success = await auth.register({ fullName, username, email });
+
+                if (success) {
+                    toast('Account created!', 'success');
+                    navigate('/dashboard');
+                } else {
+                    toast('Registration failed. Username may be taken.', 'error');
+                }
+            });
+        }
+
+        // --- DASHBOARD SCREEN ---
+        function renderDashboard() {
+            const user = appState.user;
+            const app = document.getElementById('app');
+            const quizzes = mockQuizzes.slice(0, 3);
+
+            app.innerHTML = `
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                    <div class="mb-8">
+                        <h1 class="text-3xl font-bold mb-2">Welcome back, ${user.fullName}! 👋</h1>
+                        <p class="text-muted-foreground">Here's your learning progress overview</p>
+                    </div>
+
+                    <!-- Stats Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+                        <!-- Quizzes Taken -->
+                        <div class="card p-6 rounded-xl shadow-lg">
+                            <p class="text-sm text-muted-foreground mb-1">Quizzes Taken</p>
+                            <p class="text-3xl font-extrabold">${user.quizzesTaken}</p>
+                        </div>
+                        <!-- Average Score -->
+                        <div class="card p-6 rounded-xl shadow-lg">
+                            <p class="text-sm text-muted-foreground mb-1">Average Score</p>
+                            <p class="text-3xl font-extrabold text-purple-600">${user.averageScore}%</p>
+                        </div>
+                        <!-- Best Score -->
+                        <div class="card p-6 rounded-xl shadow-lg">
+                            <p class="text-sm text-muted-foreground mb-1">Best Score</p>
+                            <p class="text-3xl font-extrabold text-green-600">${user.bestScore}%</p>
+                        </div>
+                        <!-- Time Spent -->
+                        <div class="card p-6 rounded-xl shadow-lg">
+                            <p class="text-sm text-muted-foreground mb-1">Time Spent</p>
+                            <p class="text-3xl font-extrabold text-orange-600">${user.timeSpent}h</p>
+                        </div>
+                    </div>
+
+                    <!-- Chart & Activity -->
+                    <div class="grid lg:grid-cols-3 gap-6 mb-10">
+                        <div class="lg:col-span-2 card p-6 rounded-xl shadow-lg">
+                            <h3 class="text-xl font-semibold mb-4">Score Trends (Last 7 Days)</h3>
+                            <div class="chart-placeholder h-64">Mock Score Trend Chart</div>
+                        </div>
+                        <div class="card p-6 rounded-xl shadow-lg">
+                            <h3 class="text-xl font-semibold mb-4">Recent Activity</h3>
+                            <div class="space-y-3">
+                                ${quizHistory.slice(0, 4).map(a => `
+                                    <div class="flex items-center justify-between pb-2 border-b border-border last:border-0">
+                                        <span class="text-sm">${a.quizTitle}</span>
+                                        <span class="text-xs font-semibold ${a.passed ? 'text-green-600' : 'text-red-600'}">${a.score}%</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Available Quizzes -->
+                    <div>
+                        <div class="flex items-center justify-between mb-6">
+                            <h2 class="text-2xl font-semibold">Available Quizzes</h2>
+                            <button onclick="navigate('/browse')" class="text-primary hover:underline text-sm">View All &rarr;</button>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            ${quizzes.map(quiz => `
+                                <div class="card rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow">
+                                    <div class="p-4 bg-gray-100 dark:bg-gray-700 border-b border-border">
+                                        <span class="text-xs font-medium text-purple-600">${quiz.category}</span>
+                                        <h3 class="text-lg font-semibold truncate">${quiz.title}</h3>
+                                    </div>
+                                    <div class="p-4">
+                                        <p class="text-sm text-muted-foreground mb-4 line-clamp-2">${quiz.description}</p>
+                                        <div class="flex justify-between text-sm mb-4">
+                                            <span class="text-gray-600">Questions: ${quiz.questions.length}</span>
+                                            <span class="font-semibold text-primary">${quiz.difficulty}</span>
+                                        </div>
+                                        <button onclick="navigate('/quiz/${quiz.id}')" class="btn-primary w-full py-2 rounded-md font-semibold">Start Quiz</button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- QUIZ INTERFACE SCREEN ---
+        function renderQuizInterface() {
+            const quiz = mockQuizzes.find(q => q.id === appState.currentQuizId);
+
+            if (!quiz) {
+                return document.getElementById('app').innerHTML = `<div class="p-8 text-center text-xl text-red-500">Quiz not found. <button onclick="navigate('/browse')" class="text-primary hover:underline">Go to Browse</button></div>`;
+            }
+
+            if (appState.currentQuestionIndex === 0 && Object.keys(appState.answers).length === 0) {
+                appState.timeRemaining = quiz.duration * 60;
+                if (timerInterval) clearInterval(timerInterval);
+                timerInterval = setInterval(updateTimer, 1000);
+            }
+
+            const currentQ = quiz.questions[appState.currentQuestionIndex];
+            const progress = ((appState.currentQuestionIndex + 1) / quiz.questions.length) * 100;
+            const isLastQuestion = appState.currentQuestionIndex === quiz.questions.length - 1;
+            const currentAnswerIndex = appState.answers[appState.currentQuestionIndex];
+
+            const handleAnswerSelect = (answerIndex) => {
+                appState.answers[appState.currentQuestionIndex] = answerIndex;
+                renderQuizInterface();
+            };
+
+            const handleNext = () => {
+                if (!isLastQuestion) {
+                    appState.currentQuestionIndex++;
+                } else {
+                    submitQuiz();
+                }
+                renderQuizInterface();
+            };
+
+            const handlePrevious = () => {
+                if (appState.currentQuestionIndex > 0) {
+                    appState.currentQuestionIndex--;
+                    renderQuizInterface();
+                }
+            };
+
+            const renderOptions = () => currentQ.options.map((option, index) => {
+                const isSelected = currentAnswerIndex === index;
+                return `
+                    <button onclick="handleAnswerSelect(${index})" class="w-full text-left p-4 card rounded-lg transition-all hover:shadow-md ${isSelected ? 'border-2 border-primary bg-indigo-50 dark:bg-indigo-900/20' : ''
+                    }">
+                        <span class="font-semibold mr-2">${String.fromCharCode(65 + index)}.</span>
+                        ${option}
+                    </button>
+                `;
+            }).join('');
+
+            document.getElementById('app').innerHTML = `
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                    <!-- Progress Bar -->
+                    <div class="mb-6 card p-4 rounded-xl shadow-lg">
+                        <div class="flex items-center justify-between mb-2">
+                            <h2 class="text-xl font-semibold">${quiz.title}</h2>
+                            <div id="quiz-timer" class="text-lg font-bold text-green-600">
+                                ${formatTime(appState.timeRemaining)}
+                            </div>
+                        </div>
+                        <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div style="width: ${progress}%" class="h-full bg-primary transition-all duration-300"></div>
+                        </div>
+                        <p class="text-sm text-muted-foreground mt-1">Question ${appState.currentQuestionIndex + 1} of ${quiz.questions.length}</p>
+                    </div>
+
+                    <!-- Question Content -->
+                    <div class="card p-8 rounded-xl shadow-lg mb-8">
+                        <h3 class="text-2xl font-semibold mb-6">${currentQ.text}</h3>
+                        <div class="space-y-4">
+                            ${renderOptions()}
+                        </div>
+                    </div>
+                    
+                    <!-- Navigation -->
+                    <div class="flex justify-between">
+                        <button onclick="handlePrevious()" ${appState.currentQuestionIndex === 0 ? 'disabled' : ''} class="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-md font-semibold disabled:opacity-50">
+                            &larr; Previous
+                        </button>
+                        <button onclick="${isLastQuestion ? 'submitQuiz()' : 'handleNext()'}" class="btn-primary px-6 py-2 rounded-md font-semibold">
+                            ${isLastQuestion ? 'Submit Quiz' : 'Next &rarr;'}
+                        </button>
+                    </div>
+                </div>
+            `;
+            // Attach function to global scope for event listeners
+            window.handleAnswerSelect = handleAnswerSelect;
+            window.handleNext = handleNext;
+            window.handlePrevious = handlePrevious;
+            window.submitQuiz = submitQuiz;
+
+            // Update timer display immediately
+            document.getElementById('quiz-timer').textContent = formatTime(appState.timeRemaining);
+            document.getElementById('quiz-timer').classList.toggle('text-red-600', appState.timeRemaining <= 60);
+            document.getElementById('quiz-timer').classList.toggle('text-yellow-600', appState.timeRemaining > 60 && appState.timeRemaining <= 180);
+        }
+
+        // --- TIMER LOGIC ---
+        function updateTimer() {
+            appState.timeRemaining--;
+            const timerEl = document.getElementById('quiz-timer');
+            if (timerEl) {
+                timerEl.textContent = formatTime(appState.timeRemaining);
+                timerEl.classList.toggle('text-red-600', appState.timeRemaining <= 60);
+                timerEl.classList.toggle('text-yellow-600', appState.timeRemaining > 60 && appState.timeRemaining <= 180);
+            }
+
+            if (appState.timeRemaining <= 0) {
+                clearInterval(timerInterval);
+                submitQuiz();
+                toast('Time is up! Quiz submitted.', 'error');
+            }
+        }
+
+        // --- SUBMIT QUIZ & CALCULATE RESULTS (Updated for Backend) ---
+        async function submitQuiz() {
+            if (timerInterval) clearInterval(timerInterval);
+
+            const quiz = mockQuizzes.find(q => q.id === appState.currentQuizId);
+            let correct = 0;
+            const totalQuestions = quiz.questions.length;
+
+            quiz.questions.forEach((question, index) => {
+                const userAnswerIndex = appState.answers[index];
+                if (userAnswerIndex === question.correctAnswer) {
+                    correct++;
+                }
+            });
+
+            const score = Math.round((correct / totalQuestions) * 100);
+            const timeTaken = quiz.duration * 60 - appState.timeRemaining;
+            const passed = score >= quiz.passingScore;
+
+            // --- BACKEND INTEGRATION: Save Result ---
+            const resultPayload = {
+                userId: appState.user.id,
+                quizTitle: quiz.title,
+                score,
+                passed,
+                timeTaken,
+                correct,
+                total: totalQuestions,
+                difficulty: quiz.difficulty
+            };
+
+            try {
+                const response = await fetch(`${BASE_URL}/results`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(resultPayload)
+                });
+                if (response.ok) {
+                    toast('Result saved successfully!', 'success');
+                }
+            } catch (error) {
+                console.error('Failed to save result:', error);
+                toast('Failed to save result history.', 'error');
+            }
+
+
+            // Reset quiz state
+            appState.currentQuestionIndex = 0;
+            appState.answers = {};
+            appState.timeRemaining = 0;
+
+            // Pass result data via global state
+            appState.lastResult = { score, correct, incorrect: totalQuestions - correct, skipped: totalQuestions - Object.keys(appState.answers).length, timeTaken };
+            navigate(`/results/${quiz.id}?score=${score}`);
+        }
+
+        // --- RESULTS SCREEN (Single Quiz Result) ---
+        function renderResults() {
+            const quiz = mockQuizzes.find(q => q.id === appState.currentQuizId);
+            const resultData = appState.lastResult;
+
+            if (!quiz || !resultData) {
+                return document.getElementById('app').innerHTML = `<div class="p-8 text-center text-xl text-red-500">No recent results found. <button onclick="navigate('/dashboard')" class="text-primary hover:underline">Go Home</button></div>`;
+            }
+
+            const passed = resultData.score >= quiz.passingScore;
+
+            document.getElementById('app').innerHTML = `
+                <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                    <div class="text-center mb-10">
+                        <div class="mx-auto w-32 h-32 rounded-full flex items-center justify-center mb-6 ${passed ? 'bg-gradient-to-br from-green-400 to-emerald-600' : 'bg-gradient-to-br from-orange-400 to-red-600'
+                }">
+                            <span class="text-white text-4xl font-extrabold">${resultData.score}%</span>
+                        </div>
+                        <h1 class="text-3xl font-bold mb-2">${quiz.title} - Results</h1>
+                        <p class="text-xl font-semibold ${passed ? 'text-green-600' : 'text-red-600'}">
+                            ${passed ? 'Congratulations! You Passed!' : 'Needs Improvement!'}
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+                        <div class="card p-4 text-center rounded-xl shadow-md bg-green-50 dark:bg-green-950/20"><p class="text-xl font-bold text-green-600">${resultData.correct}</p><p class="text-sm text-muted-foreground">Correct</p></div>
+                        <div class="card p-4 text-center rounded-xl shadow-md bg-red-50 dark:bg-red-950/20"><p class="text-xl font-bold text-red-600">${quiz.questions.length - resultData.correct}</p><p class="text-sm text-muted-foreground">Incorrect</p></div>
+                        <div class="card p-4 text-center rounded-xl shadow-md"><p class="text-xl font-bold text-orange-600">${formatTime(resultData.timeTaken)}</p><p class="text-sm text-muted-foreground">Time Taken</p></div>
+                        <div class="card p-4 text-center rounded-xl shadow-md"><p class="text-xl font-bold text-purple-600">${quiz.questions.length}</p><p class="text-sm text-muted-foreground">Total Qs</p></div>
+                    </div>
+
+                    <div class="flex justify-center gap-4">
+                        <button onclick="navigate('/dashboard')" class="px-6 py-2 bg-gray-200 dark:bg-gray-700 rounded-md font-semibold hover:opacity-90">Dashboard</button>
+                        <button onclick="navigate('/quiz/${quiz.id}')" class="btn-primary px-6 py-2 rounded-md font-semibold">Retake Quiz</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- SKELETAL RENDERS (Minimal implementation to allow navigation) ---
+        function renderBrowse() {
+            document.getElementById('app').innerHTML = `<div class="p-8"><h1 class="text-2xl font-bold mb-4">Browse Quizzes</h1><p class="text-muted-foreground">Showing ${mockQuizzes.length} available quizzes. Click a quiz to start playing.</p><div class="space-y-4 mt-6">${mockQuizzes.map(q => `<div class="card p-4 rounded-md shadow flex justify-between items-center"><span class="font-medium">${q.title}</span><button onclick="navigate('/quiz/${q.id}')" class="btn-primary px-3 py-1 text-sm rounded-md">Start</button></div>`).join('')}</div></div>`;
+        }
+
+        // --- RESULTS HISTORY SCREEN (Updated for Backend) ---
+        async function renderResultsHistory() {
+            const app = document.getElementById('app');
+
+            // --- BACKEND INTEGRATION: Fetch results for user ---
+            try {
+                const response = await fetch(`${BASE_URL}/results/${appState.user.id}`);
+                const data = await response.json();
+                if (response.ok) {
+                    quizHistory = data;
+                }
+            } catch (error) {
+                // toast('Failed to load quiz history from backend.', 'error');
+            }
+
+
+            // --- Stats Calculation ---
+            const totalQuizzes = quizHistory.length;
+            const passedQuizzes = quizHistory.filter(q => q.passed).length;
+            const averageScore = Math.round(quizHistory.reduce((sum, q) => sum + q.score, 0) / (totalQuizzes || 1));
+            const bestScore = Math.max(...quizHistory.map(q => q.score));
+
+            // Filter state (mocked interaction)
+            let searchQuery = '';
+            let filterStatus = 'all';
+            let filterDifficulty = 'all';
+
+            // --- Chart Data Mock (Last 6 quizzes, reversed for chronological order) ---
+            const performanceData = quizHistory.slice().sort((a, b) => new Date(a.date) - new Date(b.date)).slice(-6).map(q => ({
+                date: new Date(q.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                score: q.score
+            }));
+
+            // --- Rendering Logic Helpers ---
+
+            const getScoreRingSVG = (score) => {
+                const radius = 30;
+                const circumference = 2 * Math.PI * radius;
+                const offset = circumference - (score / 100) * circumference;
+                const color = score >= 80 ? '#34d399' : '#8b5cf6'; // Green or Purple
+
+                return `
+                    <svg width="60" height="60" viewBox="0 0 64 64" class="transform -rotate-90">
+                        <!-- Background Circle -->
+                        <circle cx="32" cy="32" r="${radius}" stroke="#e5e7eb" stroke-width="8" fill="transparent" />
+                        <!-- Progress Circle -->
+                        <circle cx="32" cy="32" r="${radius}" stroke="${color}" stroke-width="8" fill="transparent"
+                            stroke-dasharray="${circumference}"
+                            stroke-dashoffset="${offset}"
+                            stroke-linecap="round"
+                            style="transition: stroke-dashoffset 0.5s;"
+                        />
+                        <!-- Text -->
+                        <text x="32" y="32" alignment-baseline="middle" text-anchor="middle" font-size="12" font-weight="600" fill="var(--foreground)" class="transform rotate-90">
+                            ${score}%
+                        </text>
+                    </svg>
+                `;
+            };
+
+            const getChartSVG = (data) => {
+                if (data.length < 2) return '<div class="chart-placeholder">Not enough data to draw chart.</div>';
+
+                const width = 600;
+                const height = 200;
+                const padding = 30;
+
+                const maxScore = 100;
+                const minScore = 0;
+
+                const chartWidth = width - 2 * padding;
+                const chartHeight = height - 2 * padding;
+
+                const scoreToY = (score) => height - padding - (score - minScore) / (maxScore - minScore) * chartHeight;
+                const indexToX = (index) => padding + index / (data.length - 1) * chartWidth;
+
+                // Create polyline path
+                const linePath = data.map((d, i) => `${indexToX(i)},${scoreToY(d.score)}`).join(' L ');
+
+                // Points for circles
+                const circles = data.map((d, i) => ({ x: indexToX(i), y: scoreToY(d.score), score: d.score }));
+
+                // X-Axis labels
+                const xLabels = data.map((d, i) => ({ x: indexToX(i), label: d.date }));
+
+                return `
+                    <svg width="100%" viewBox="0 0 ${width} ${height}" class="w-full">
+                        <!-- Y-Axis Grid Lines (Mock: 0, 50, 100) -->
+                        <line x1="${padding}" y1="${scoreToY(100)}" x2="${width - padding}" y2="${scoreToY(100)}" stroke="var(--border)" stroke-dasharray="3 3" />
+                        <line x1="${padding}" y1="${scoreToY(50)}" x2="${width - padding}" y2="${scoreToY(50)}" stroke="var(--border)" stroke-dasharray="3 3" />
+                        <line x1="${padding}" y1="${scoreToY(0)}" x2="${width - padding}" y2="${scoreToY(0)}" stroke="var(--border)" stroke-dasharray="3 3" />
+                        
+                        <!-- Line Path -->
+                        <polyline fill="none" stroke="#8b5cf6" stroke-width="3" points="${linePath}" />
+                        
+                        <!-- Axis Labels -->
+                        <text x="${padding - 5}" y="${scoreToY(100)}" text-anchor="end" font-size="12" fill="var(--foreground)">100</text>
+                        <text x="${padding - 5}" y="${scoreToY(50)}" text-anchor="end" font-size="12" fill="var(--foreground)">50</text>
+                        <text x="${padding - 5}" y="${scoreToY(0)}" text-anchor="end" font-size="12" fill="var(--foreground)">0</text>
+
+                        <!-- Data Points -->
+                        ${circles.map(c => `
+                            <circle cx="${c.x}" cy="${c.y}" r="4" fill="#8b5cf6" stroke="var(--card)" stroke-width="2" />
+                        `).join('')}
+
+                        <!-- X-Axis Labels -->
+                        ${xLabels.map(l => `
+                            <text x="${l.x}" y="${height - padding + 15}" text-anchor="middle" font-size="12" fill="var(--foreground)">${l.label}</text>
+                        `).join('')}
+                    </svg>
+                `;
+            };
+
+            const filteredHistory = quizHistory.filter(quiz => {
+                const matchesSearch = quiz.quizTitle.toLowerCase().includes(searchQuery.toLowerCase());
+                const matchesStatus = filterStatus === 'all' ||
+                    (filterStatus === 'passed' && quiz.passed) ||
+                    (filterStatus === 'failed' && !quiz.passed);
+                const matchesDifficulty = filterDifficulty === 'all' || quiz.difficulty === filterDifficulty;
+                return matchesSearch && matchesStatus && matchesDifficulty;
+            });
+
+            // --- Component Render ---
+            app.innerHTML = `
+                <div class="min-h-[calc(100vh-4rem)] pt-8 pb-12 px-4">
+                    <div class="max-w-7xl mx-auto">
+                        <!-- Header -->
+                        <div class="mb-8">
+                            <div class="flex items-center gap-3 mb-3">
+                                <span class="text-3xl">🏆</span>
+                                <h1 class="text-3xl font-bold">Quiz Results History</h1>
+                            </div>
+                            <p class="text-muted-foreground">Track your progress and review past quiz performances</p>
+                        </div>
+
+                        <!-- Stats Overview (4 Cards) -->
+                        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                            <!-- Total Quizzes -->
+                            <div class="card p-6 rounded-xl shadow-lg flex items-center justify-between">
+                                <div>
+                                    <p class="text-3xl font-extrabold">${totalQuizzes}</p>
+                                    <p class="text-sm text-muted-foreground">Total Quizzes</p>
+                                </div>
+                                <span class="text-3xl text-green-500">📈</span>
+                            </div>
+
+                            <!-- Passed -->
+                            <div class="card p-6 rounded-xl shadow-lg flex items-center justify-between">
+                                <div>
+                                    <p class="text-3xl font-extrabold">${passedQuizzes}</p>
+                                    <p class="text-sm text-muted-foreground">Passed</p>
+                                </div>
+                                <span class="text-3xl text-purple-500">✅</span>
+                            </div>
+
+                            <!-- Average Score -->
+                            <div class="card p-6 rounded-xl shadow-lg flex items-center justify-between">
+                                <div>
+                                    <p class="text-3xl font-extrabold">${averageScore}%</p>
+                                    <p class="text-sm text-muted-foreground">Average Score</p>
+                                </div>
+                                <span class="text-3xl text-indigo-500">📊</span>
+                            </div>
+
+                            <!-- Best Score -->
+                            <div class="card p-6 rounded-xl shadow-lg flex items-center justify-between">
+                                <div>
+                                    <p class="text-3xl font-extrabold">${bestScore}%</p>
+                                    <p class="text-sm text-muted-foreground">Best Score</p>
+                                </div>
+                                <span class="text-3xl text-yellow-500">🏆</span>
+                            </div>
+                        </div>
+
+                        <!-- Score Trends Chart -->
+                        <div class="card p-6 mb-8 rounded-xl shadow-lg">
+                            <h3 class="text-xl font-semibold mb-4">Score Trends (Last ${performanceData.length} Quizzes)</h3>
+                            ${getChartSVG(performanceData)}
+                        </div>
+
+                        <!-- Filters -->
+                        <div class="card p-4 mb-8 rounded-xl shadow-lg">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div class="relative">
+                                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">🔍</span>
+                                    <input id="search-query" type="text" placeholder="Search quizzes..." value="${searchQuery}" oninput="handleFilterChange('search', this.value)" class="input w-full p-2 rounded-md" style="padding-left: 2.5rem;" />
+                                </div>
+                                <select id="filter-status" onchange="handleFilterChange('status', this.value)" class="select-trigger w-full p-2 rounded-md" style="padding-left: 1rem;">
+                                    <option value="all" ${filterStatus === 'all' ? 'selected' : ''}>All Status</option>
+                                    <option value="passed" ${filterStatus === 'passed' ? 'selected' : ''}>Passed</option>
+                                    <option value="failed" ${filterStatus === 'failed' ? 'selected' : ''}>Failed</option>
+                                </select>
+                                <select id="filter-difficulty" onchange="handleFilterChange('difficulty', this.value)" class="select-trigger w-full p-2 rounded-md" style="padding-left: 1rem;">
+                                    <option value="all" ${filterDifficulty === 'all' ? 'selected' : ''}>All Difficulties</option>
+                                    <option value="Easy" ${filterDifficulty === 'Easy' ? 'selected' : ''}>Easy</option>
+                                    <option value="Medium" ${filterDifficulty === 'Medium' ? 'selected' : ''}>Medium</option>
+                                    <option value="Hard" ${filterDifficulty === 'Hard' ? 'selected' : ''}>Hard</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Results List -->
+                        <div class="space-y-4">
+                            ${filteredHistory.length === 0 ? `
+                                <div class="card p-12 text-center rounded-xl shadow-lg">
+                                    <p class="text-xl text-muted-foreground">No results match your filters.</p>
+                                </div>
+                            ` : filteredHistory.map(quiz => `
+                                <div class="card p-6 rounded-xl shadow-lg hover:shadow-xl transition-all flex flex-col md:flex-row justify-between items-start md:items-center">
+                                    <div class="flex-1">
+                                        <h3 class="text-lg font-semibold mb-1">${quiz.quizTitle}</h3>
+                                        <div class="flex items-center gap-3 text-sm text-muted-foreground mb-3">
+                                            <span class="px-2 py-0.5 text-xs rounded-full ${quiz.passed ? 'bg-green-100 text-green-800 dark:bg-green-900' : 'bg-red-100 text-red-800 dark:bg-red-900'}">
+                                                ${quiz.passed ? 'Passed' : 'Failed'}
+                                            </span>
+                                            <span class="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
+                                                ${quiz.difficulty}
+                                            </span>
+                                        </div>
+                                        <div class="text-sm text-muted-foreground flex items-center gap-4">
+                                            <span>🗓️ ${new Date(quiz.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                                            <span>⏰ ${formatTime(quiz.timeTaken)}</span>
+                                            <span>✅ ${quiz.correct}/${quiz.total} Correct</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex items-center gap-4 mt-4 md:mt-0">
+                                        <!-- Score Ring -->
+                                        <div class="relative w-16 h-16">
+                                            ${getScoreRingSVG(quiz.score)}
+                                        </div>
+                                        
+                                        <button class="px-3 py-1.5 text-sm rounded-md bg-gray-200 dark:bg-gray-700 font-semibold hover:opacity-90">
+                                            View Details
+                                        </button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+
+                    </div>
+                </div>
+            `;
+
+            // --- Filter Handlers ---
+            window.handleFilterChange = (type, value) => {
+                if (type === 'search') searchQuery = value;
+                else if (type === 'status') filterStatus = value;
+                else if (type === 'difficulty') filterDifficulty = value;
+
+                // Re-render the page with the updated filters
+                renderResultsHistory();
+
+                // Manually reset the select boxes to the filtered value
+                document.getElementById('filter-status').value = filterStatus;
+                document.getElementById('filter-difficulty').value = filterDifficulty;
+            };
+
+            // Attach external functions to window object for access by inline event handlers
+            window.handleFilterChange = window.handleFilterChange;
+        }
+
+        function renderProfile() {
+            const user = appState.user;
+            const app = document.getElementById('app');
+            let profileData = appState.profileData;
+            let activeTab = appState.profileActiveTab;
+            let security = appState.profileSecurity;
+
+            const handleTabChange = (newTab) => {
+                appState.profileActiveTab = newTab;
+                renderProfile();
+            };
+
+            const handleInputChange = (field, value) => {
+                appState.profileData = { ...appState.profileData, [field]: value };
+            };
+
+            const handleSecurityChange = (field, value) => {
+                appState.profileSecurity = { ...appState.profileSecurity, [field]: value };
+            };
+
+            const handleSaveProfile = () => {
+                // Update the mocked user state (optional, just for display consistency)
+                appState.user.fullName = appState.profileData.fullName;
+                appState.user.username = appState.profileData.username;
+                appState.user.email = appState.profileData.email;
+                toast('Profile updated successfully!', 'success');
+                renderProfile();
+            };
+
+            const handleChangePassword = () => {
+                if (security.newPassword !== security.confirmPassword) {
+                    toast('Passwords do not match.', 'error');
+                    return;
+                }
+                if (!security.currentPassword || !security.newPassword) {
+                    toast('Please fill in all password fields.', 'error');
+                    return;
+                }
+
+                toast('Password changed successfully!', 'success');
+                appState.profileSecurity = {
+                    currentPassword: '',
+                    newPassword: '',
+                    confirmPassword: '',
+                };
+                renderProfile();
+            };
+
+            const renderGeneralTab = () => `
+                <div class="space-y-6 pt-4" id="general-content">
+                    <h3 class="text-xl font-semibold mb-4">Personal Information</h3>
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <!-- Full Name -->
+                        <div class="space-y-2">
+                            <label for="fullName" class="block text-sm font-medium">Full Name</label>
+                            <div class="relative">
+                                <!-- FIX: Added icon and input styling -->
+                                <svg class="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                                <input id="fullName" type="text" value="${profileData.fullName}" oninput="handleInputChange('fullName', this.value)" class="input w-full p-2 rounded-md" />
+                            </div>
+                        </div>
+
+                        <!-- Username -->
+                        <div class="space-y-2">
+                            <label for="username" class="block text-sm font-medium">Username</label>
+                            <div class="relative">
+                                <!-- FIX: Added icon and input styling -->
+                                <svg class="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                                <input id="username" type="text" value="@${profileData.username}" oninput="handleInputChange('username', this.value.substring(1))" class="input w-full p-2 rounded-md" />
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <!-- Email -->
+                        <div class="space-y-2">
+                            <label for="email" class="block text-sm font-medium">Email</label>
+                            <div class="relative">
+                                <!-- FIX: Added icon and input styling -->
+                                <svg class="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8m-2 4v7a2 2 0 01-2 2H5a2 2 0 01-2-2v-7"></path></svg>
+                                <input id="email" type="email" value="${profileData.email}" oninput="handleInputChange('email', this.value)" class="input w-full p-2 rounded-md" />
+                            </div>
+                        </div>
+
+                        <!-- Phone Number -->
+                        <div class="space-y-2">
+                            <label for="phone" class="block text-sm font-medium">Phone Number</label>
+                            <div class="relative">
+                                <!-- FIX: Added icon and input styling -->
+                                <svg class="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.113a11.042 11.042 0 005.122 5.122l1.113-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.717 21 3 14.283 3 6V5z"></path></svg>
+                                <input id="phone" type="tel" value="${profileData.phone}" oninput="handleInputChange('phone', this.value)" class="input w-full p-2 rounded-md" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bio -->
+                    <div class="space-y-2">
+                        <label for="bio" class="block text-sm font-medium">Bio</label>
+                        <textarea id="bio" placeholder="Tell us about yourself..." oninput="handleInputChange('bio', this.value)" class="textarea w-full p-2 rounded-md has-icon" style="padding-left: 1rem;">${profileData.bio}</textarea>
+                    </div>
+
+                    <div class="flex justify-end gap-3 pt-4">
+                        <button onclick="renderProfile()" class="px-4 py-2 text-sm rounded-md bg-gray-200 dark:bg-gray-700 font-semibold hover:opacity-90">Cancel</button>
+                        <button onclick="handleSaveProfile()" class="btn-primary px-4 py-2 text-sm rounded-md font-semibold flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-3m-7-4l4 4m-4 0h4"></path></svg>
+                            Save Changes
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            const renderNotificationsTab = () => `
+                <div class="space-y-6 pt-4">
+                    <h3 class="text-xl font-semibold mb-4">Notification Preferences (Mocked)</h3>
+                    <div class="flex items-center justify-between border-b border-border pb-4">
+                        <div>
+                            <p class="font-medium">Email Notifications</p>
+                            <p class="text-sm text-muted-foreground">Receive updates via email</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" value="" class="sr-only peer" checked>
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/50 dark:peer-focus:ring-primary/80 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
+                        </label>
+                    </div>
+                     <div class="flex items-center justify-between border-b border-border pb-4">
+                        <div>
+                            <p class="font-medium">Quiz Reminders</p>
+                            <p class="text-sm text-muted-foreground">Get reminded about new quizzes</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" value="" class="sr-only peer" checked>
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/50 dark:peer-focus:ring-primary/80 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
+                        </label>
+                    </div>
+                    <div class="flex justify-end gap-3 pt-4">
+                        <button class="btn-primary px-4 py-2 text-sm rounded-md font-semibold" onclick="toast('Notification settings saved!', 'success')">Save Preferences</button>
+                    </div>
+                </div>
+            `;
+
+            const renderSecurityTab = () => `
+                <div class="space-y-6 pt-4">
+                    <h3 class="text-xl font-semibold mb-4">Change Password</h3>
+                    
+                    <!-- Current Password -->
+                    <div class="space-y-2">
+                        <label for="currentPassword" class="block text-sm font-medium">Current Password</label>
+                        <div class="relative">
+                            <svg class="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                            <input id="currentPassword" type="password" value="${security.currentPassword}" oninput="handleSecurityChange('currentPassword', this.value)" placeholder="••••••••" class="input w-full p-2 rounded-md" />
+                        </div>
+                    </div>
+                    
+                    <!-- New Password -->
+                    <div class="space-y-2">
+                        <label for="newPassword" class="block text-sm font-medium">New Password</label>
+                        <div class="relative">
+                            <svg class="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                            <input id="newPassword" type="password" value="${security.newPassword}" oninput="handleSecurityChange('newPassword', this.value)" placeholder="••••••••" class="input w-full p-2 rounded-md" />
+                        </div>
+                    </div>
+                    
+                    <!-- Confirm Password -->
+                    <div class="space-y-2">
+                        <label for="confirmPassword" class="block text-sm font-medium">Confirm New Password</label>
+                        <div class="relative">
+                            <svg class="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                            <input id="confirmPassword" type="password" value="${security.confirmPassword}" oninput="handleSecurityChange('confirmPassword', this.value)" placeholder="••••••••" class="input w-full p-2 rounded-md" />
+                        </div>
+                    </div>
+
+                    <div class="p-4 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-800 text-sm">
+                        <p class="font-semibold text-red-900 dark:text-red-100">Password requirements:</p>
+                        <ul class="text-xs text-red-800 dark:text-red-200 mt-1 ml-4 list-disc">
+                          <li>At least 8 characters long</li>
+                          <li>Include uppercase and lowercase letters</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="flex justify-end gap-3 pt-4">
+                        <button onclick="renderProfile()" class="px-4 py-2 text-sm rounded-md bg-gray-200 dark:bg-gray-700 font-semibold hover:opacity-90">Cancel</button>
+                        <button onclick="handleChangePassword()" class="btn-primary px-4 py-2 text-sm rounded-md font-semibold flex items-center gap-2">
+                            Update Password
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            let tabContent = '';
+            switch (activeTab) {
+                case 'general':
+                    tabContent = renderGeneralTab();
+                    break;
+                case 'notifications':
+                    tabContent = renderNotificationsTab();
+                    break;
+                case 'security':
+                    tabContent = renderSecurityTab();
+                    break;
+            }
+
+            app.innerHTML = `
+                <div class="min-h-[calc(100vh-4rem)] pt-8 pb-12 px-4">
+                    <div class="max-w-6xl mx-auto">
+                        <div class="mb-8">
+                            <h1 class="text-3xl font-bold mb-2">Profile Settings</h1>
+                            <p class="text-muted-foreground">Manage your account settings and preferences</p>
+                        </div>
+
+                        <div class="grid lg:grid-cols-4 gap-6">
+                            <!-- Sidebar -->
+                            <div class="lg:col-span-1 card p-6 rounded-xl shadow-lg h-fit lg:sticky lg:top-20">
+                                <div class="flex flex-col items-center text-center mb-6">
+                                    <div class="relative mb-4">
+                                        <!-- Avatar -->
+                                        <img src="${user.avatar}" alt="Avatar" class="w-24 h-24 rounded-full border-4 border-primary/20" />
+                                        <button class="absolute bottom-0 right-0 rounded-full h-8 w-8 bg-gray-200 dark:bg-gray-700 flex items-center justify-center border-2 border-card" onclick="toast('Upload Avatar Clicked', 'info')">
+                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l1.416-2.008a2 2 0 011.664-.89h.93a2 2 0 012 2v.93a2 2 0 00.89 1.664l2.008 1.416a2 2 0 01.89 1.664V19a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                                        </button>
+                                    </div>
+                                    <h3 class="text-lg font-semibold mb-1">${profileData.fullName}</h3>
+                                    <p class="text-sm text-muted-foreground mb-2">@${profileData.username}</p>
+                                    <span class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200">
+                                        User
+                                    </span>
+                                </div>
+
+                                <div class="w-full h-px bg-border my-6"></div>
+
+                                <div class="space-y-4">
+                                    ${[
+                    { icon: '🏆', label: 'Quizzes Taken', value: user.quizzesTaken, color: 'text-blue-600' },
+                    { icon: '⭐', label: 'Avg Score', value: `${user.averageScore}%`, color: 'text-green-600' },
+                    { icon: '⏰', label: 'Time Spent', value: `${user.timeSpent}h`, color: 'text-orange-600' },
+                    { icon: '🗓️', label: 'Joined', value: user.joinedDate, color: 'text-purple-600' },
+                ].map(item => `
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center gap-2 text-sm">
+                                                <span class="${item.color}">${item.icon}</span>
+                                                <span>${item.label}</span>
+                                            </div>
+                                            <span class="text-sm font-semibold">${item.value}</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+
+                            <!-- Main Content (Tabs) -->
+                            <div class="lg:col-span-3">
+                                <div class="tabs-list mb-6 p-1">
+                                    ${['general', 'notifications', 'security'].map(tab => `
+                                        <button onclick="handleTabChange('${tab}')" class="tabs-trigger ${activeTab === tab ? 'tabs-active shadow' : ''}">
+                                            ${tab.charAt(0).toUpperCase() + tab.slice(1)}
+                                        </button>
+                                    `).join('')}
+                                </div>
+
+                                <!-- Tab Content Card -->
+                                <div class="card p-6 rounded-xl shadow-lg">
+                                    ${tabContent}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Expose utility functions globally for dynamic HTML event listeners
+            window.handleTabChange = handleTabChange;
+            window.handleInputChange = handleInputChange;
+            window.handleSecurityChange = handleSecurityChange;
+            window.handleSaveProfile = handleSaveProfile;
+            window.handleChangePassword = handleChangePassword;
+        }
+
+        function renderFeedback() {
+            const user = appState.user;
+            const app = document.getElementById('app');
+            const initialFormState = {
+                name: user ? user.fullName : '',
+                email: user ? user.email : '',
+                type: '',
+                rating: 0,
+                message: ''
+            };
+
+            // Render initial screen structure
+            app.innerHTML = `
+                <div class="min-h-[calc(100vh-4rem)] feedback-gradient-bg pt-8 pb-12 px-4">
+                    <div class="max-w-3xl mx-auto relative z-10">
+                        <div class="text-center mb-8">
+                            <div class="mx-auto w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center mb-4 shadow-lg">
+                                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                            </div>
+                            <h1 class="text-4xl font-extrabold feedback-header-gradient mb-3">
+                                We Value Your Feedback
+                            </h1>
+                            <p class="text-muted-foreground max-w-2xl mx-auto text-sm">
+                                Help us improve your experience! Share your thoughts, suggestions, or report any issues.
+                            </p>
+                        </div>
+                        
+                        <div id="feedback-form-card" class="card p-8 shadow-2xl border-0 bg-card/80 backdrop-blur-sm">
+                            <!-- Form content will be rendered here by updateFormUI -->
+                        </div>
+
+                        <!-- Info Cards -->
+                        <div class="grid md:grid-cols-3 gap-4 mt-8">
+                            <div class="card p-4 text-center rounded-xl border-0 bg-card/60 backdrop-blur-sm shadow-md">
+                                <div class="text-2xl mb-2">💡</div>
+                                <h3 class="text-sm font-semibold mb-1">Feature Ideas</h3>
+                                <p class="text-xs text-muted-foreground">Share your innovative suggestions</p>
+                            </div>
+                            <div class="card p-4 text-center rounded-xl border-0 bg-card/60 backdrop-blur-sm shadow-md">
+                                <div class="text-2xl mb-2">🐛</div>
+                                <h3 class="text-sm font-semibold mb-1">Report Bugs</h3>
+                                <p class="text-xs text-muted-foreground">Help us fix issues quickly</p>
+                            </div>
+                            <div class="card p-4 text-center rounded-xl border-0 bg-card/60 backdrop-blur-sm shadow-md">
+                                <div class="text-2xl mb-2">⭐</div>
+                                <h3 class="text-sm font-semibold mb-1">Share Love</h3>
+                                <p class="text-xs text-muted-foreground">Tell us what you enjoy</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            let formData = { ...initialFormState };
+            let isSubmitting = false;
+            let isSubmitted = false;
+
+            const updateFormUI = () => {
+                const formCard = document.getElementById('feedback-form-card');
+
+                if (isSubmitted) {
+                    formCard.innerHTML = `
+                        <div class="text-center py-12">
+                            <div class="mx-auto w-20 h-20 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 mb-6 flex items-center justify-center animate-pulse">
+                                <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            </div> 
+                            <h2 class="text-3xl font-extrabold text-green-600 mb-3">Thank You!</h2>
+                            <p class="text-muted-foreground mb-2">Your feedback has been submitted successfully.</p>
+                            <p class="text-sm text-gray-500">We appreciate you taking the time to help us improve! 🙏</p>
+                        </div>
+                    `;
+                } else {
+                    const ratingMessage = formData.rating > 0
+                        ? (formData.rating === 5 ? 'Excellent! 🎉' :
+                            formData.rating === 4 ? 'Great! 😊' :
+                                formData.rating === 3 ? 'Good 👍' :
+                                    formData.rating === 2 ? 'Could be better 😐' :
+                                        'Needs improvement 😞')
+                        : '';
+
+                    formCard.innerHTML = `
+                        <form id="feedback-form" class="space-y-6">
+                            <!-- Name and Email Row -->
+                            <div class="grid md:grid-cols-2 gap-6">
+                                <div class="space-y-2">
+                                    <label for="name" class="block text-sm font-medium">Name</label>
+                                    <input id="name" type="text" value="${formData.name}" data-field="name" placeholder="Your name" class="input w-full p-2 rounded-md has-icon" style="padding-left: 1rem;" required />
+                                </div>
+                                <div class="space-y-2">
+                                    <label for="email" class="block text-sm font-medium">Email</label>
+                                    <input id="email" type="email" value="${formData.email}" data-field="email" placeholder="your.email@example.com" class="input w-full p-2 rounded-md has-icon" style="padding-left: 1rem;" required />
+                                </div>
+                            </div>
+
+                            <!-- Feedback Type -->
+                            <div class="space-y-2">
+                                <label for="type" class="block text-sm font-medium">Feedback Type *</label>
+                                <select id="type" data-field="type" class="select-trigger w-full p-2 rounded-md has-icon" style="padding-left: 1rem;" required>
+                                    <option value="" disabled ${!formData.type ? 'selected' : ''}>Select feedback type</option>
+                                    <option value="bug" ${formData.type === 'bug' ? 'selected' : ''}>Bug Report</option>
+                                    <option value="feature" ${formData.type === 'feature' ? 'selected' : ''}>Feature Request</option>
+                                    <option value="improvement" ${formData.type === 'improvement' ? 'selected' : ''}>Improvement Suggestion</option>
+                                    <option value="general" ${formData.type === 'general' ? 'selected' : ''}>General Feedback</option>
+                                </select>
+                            </div>
+
+                            <!-- Rating -->
+                            <div class="space-y-2">
+                                <label class="block text-sm font-medium">Overall Experience *</label>
+                                <div class="flex gap-2">
+                                    ${[1, 2, 3, 4, 5].map(star => `
+                                        <button type="button" onclick="handleStarClick(${star})" class="group transition-transform hover:scale-110 focus:outline-none">
+                                            <svg class="w-10 h-10 transition-all ${formData.rating >= star
+                            ? 'fill-yellow-400 text-yellow-400'
+                            : 'text-gray-300 group-hover:text-yellow-200'
+                        }" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.517 8.243L12 18.067l-7.453 3.31L6.064 15.14 0 9.306l8.332-1.151z"/></svg>
+                                        </button>
+                                    `).join('')}
+                                </div>
+                                ${formData.rating > 0 ? `<p class="text-sm text-muted-foreground">${ratingMessage}</p>` : ''}
+                            </div>
+
+                            <!-- Message -->
+                            <div class="space-y-2">
+                                <label for="message" class="block text-sm font-medium">Your Feedback *</label>
+                                <textarea id="message" data-field="message" placeholder="Tell us what you think..." rows="6" class="textarea w-full p-2 rounded-md resize-none has-icon" style="padding-left: 1rem;" required>${formData.message}</textarea>
+                                <p class="text-sm text-muted-foreground">${formData.message.length} characters</p>
+                            </div>
+
+                            <!-- Submit Button -->
+                            <button
+                                type="submit"
+                                id="submit-feedback-btn"
+                                class="w-full bg-gradient-to-r from-violet-500 to-fuchsia-500 hover:from-violet-600 hover:to-fuchsia-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 py-3 rounded-md font-semibold ${isSubmitting ? 'opacity-60 cursor-not-allowed' : ''}"
+                                ${isSubmitting ? 'disabled' : ''}
+                            >
+                                ${isSubmitting ?
+                            `<div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto"></div>` :
+                            `Submit Feedback`
+                        }
+                            </button>
+                        </form>
+                    `;
+
+                    // Re-attach handlers
+                    document.getElementById('feedback-form').addEventListener('submit', handleSubmit);
+                    document.querySelectorAll('#feedback-form input, #feedback-form textarea, #feedback-form select').forEach(el => {
+                        el.addEventListener('input', handleInputChange);
+                    });
+                }
+            };
+
+            const handleInputChange = (e) => {
+                const field = e.target.dataset.field || e.target.id;
+                formData = { ...formData, [field]: e.target.value };
+                if (field === 'message') {
+                    updateFormUI();
+                }
+            };
+
+            const handleStarClick = (rating) => {
+                formData = { ...formData, rating };
+                updateFormUI();
+            };
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+
+                if (!formData.type || !formData.rating || !formData.message.trim()) {
+                    toast('Please fill in all required fields.', 'error');
+                    return;
+                }
+
+                isSubmitting = true;
+                updateFormUI();
+
+                // Simulate submission delay
+                setTimeout(() => {
+                    isSubmitting = false;
+                    isSubmitted = true;
+                    toast('Thank you for your feedback!', 'success');
+                    updateFormUI();
+
+                    setTimeout(() => {
+                        isSubmitted = false;
+                        formData = { ...initialFormState };
+                        updateFormUI();
+                    }, 3000);
+                }, 1500);
+            };
+
+            window.handleStarClick = handleStarClick;
+            updateFormUI();
+        }
+
+        // --- LLM API Integration Functions ---
+
+        /** Updates the generation config state and re-renders the modal. */
+        const handleGenerationConfigInput = (field, value) => {
+            if (field === 'numQuestions') {
+                value = parseInt(value) || 1;
+                value = Math.max(1, Math.min(10, value)); // Clamp between 1 and 10
+            }
+            appState.admin.generationConfig = { ...appState.admin.generationConfig, [field]: value };
+            renderAdminDashboard();
+        };
+
+        /** Adds generated questions to the main quiz draft. */
+        const handleAddGeneratedQuestions = () => {
+            const currentQuestionsCount = appState.admin.newQuiz.questions.length;
+            const newQuestions = appState.admin.generatedQuestions.map((q, i) => ({
+                ...q,
+                id: `q${currentQuestionsCount + i + 1}`
+            }));
+
+            appState.admin.newQuiz.questions = [...appState.admin.newQuiz.questions, ...newQuestions];
+            appState.admin.generatedQuestions = []; // Clear generated questions after adding
+            appState.admin.generationConfig.topic = ''; // Clear topic for new generation
+            toast(`${newQuestions.length} questions added to the quiz draft!`, 'success');
+            renderAdminDashboard();
+        };
+
+        /** Calls Gemini API to generate structured quiz questions. */
+        async function generateQuestionsLLM() {
+            // Preserve focus and cursor position
+            // At the very top of generateQuestionsLLM()
+            const activeInput = document.activeElement;
+            let cursorPosition = null;
+            if (activeInput && (activeInput.tagName === 'INPUT' || activeInput.tagName === 'TEXTAREA')) {
+                cursorPosition = activeInput.selectionStart;
+            }
+
+            try {
+                // ...your question generation logic, API calls, and updates...
+            } finally {
+                appState.admin.isGenerating = false;
+                renderAdminDashboard();
+                setTimeout(() => {
+                    if (activeInput && typeof activeInput.focus === 'function') {
+                        activeInput.focus();
+                        if (cursorPosition !== null) {
+                            activeInput.setSelectionRange(cursorPosition, cursorPosition);
+                        }
+                    }
+                }, 10);
+            }
+
+
+            const config = appState.admin.generationConfig;
+            if (!config.topic.trim()) {
+                toast("Please enter a quiz topic before generating.", 'error');
+                return;
+            }
+
+            appState.admin.isGenerating = true;
+            appState.admin.generatedQuestions = [];
+            renderAdminDashboard();
+
+            const systemPrompt = "You are an expert quiz generator. Your task is to generate multiple-choice questions (MCQs) in JSON format. Each question must have 4 options and clearly specify the correct answer index (0-3) and a brief explanation.";
+
+            const userQuery = `Generate ${config.numQuestions} multiple-choice quiz questions about the topic: "${config.topic}". The difficulty should be ${config.difficulty}. The output must strictly be a JSON array matching the provided schema.`;
+
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                systemInstruction: { parts: [{ text: systemPrompt }] },
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "ARRAY",
+                        items: {
+                            type: "OBJECT",
+                            properties: {
+                                "text": { "type": "STRING", "description": "The quiz question text." },
+                                "options": { "type": "ARRAY", "items": { "type": "STRING" }, "description": "Exactly four answer options." },
+                                "correctAnswer": { "type": "INTEGER", "description": "The zero-based index (0, 1, 2, or 3) of the correct answer." },
+                                "explanation": { "type": "STRING", "description": "A brief explanation of the correct answer." }
+                            },
+                            required: ["text", "options", "correctAnswer", "explanation"],
+                            propertyOrdering: ["text", "options", "correctAnswer", "explanation"]
+                        }
+                    }
+                }
+            };
+
+            try {
+                const response = await fetch(LLM_API_URL + API_KEY, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API returned status ${response.status}`);
+                }
+
+                const result = await response.json();
+                const jsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                let generatedQuestions = [];
+
+                if (jsonText) {
+                    try {
+                        generatedQuestions = JSON.parse(jsonText);
+                    } catch (e) {
+                        console.error("Failed to parse LLM response JSON:", e, jsonText);
+                        toast("Error parsing AI response. Please try again.", 'error');
+                    }
+                }
+
+                appState.admin.generatedQuestions = generatedQuestions;
+                toast(`Successfully generated ${generatedQuestions.length} questions!`, 'success');
+
+            } catch (error) {
+                console.error('LLM generation error:', error);
+                toast(`Failed to generate questions. Check API key and network.`, 'error');
+            } finally {
+                appState.admin.isGenerating = false;
+                renderAdminDashboard();
+            }
+        }
+
+        // --- ADMIN DASHBOARD SCREEN (Updated for Backend) ---
+        function renderAdminDashboard() {
+            const totalQuizzes = mockQuizzes.length;
+            const activeQuizzes = mockQuizzes.filter(q => q.status === 'active').length;
+
+            let adminState = appState.admin;
+            let newQuiz = adminState.newQuiz;
+            let newQuestion = adminState.newQuestion;
+            let showAddQuiz = adminState.showAddQuiz;
+            let activeModalTab = adminState.activeModalTab;
+            let genConfig = adminState.generationConfig;
+
+            // --- FIX: Ensure internal state reflects global state changes ---
+            if (JSON.stringify(newQuiz) !== JSON.stringify(appState.admin.newQuiz)) newQuiz = appState.admin.newQuiz;
+            if (JSON.stringify(newQuestion) !== JSON.stringify(appState.admin.newQuestion)) newQuestion = appState.admin.newQuestion;
+
+
+            const handleQuizInput = (field, value) => {
+                newQuiz = { ...newQuiz, [field]: value };
+                appState.admin.newQuiz = newQuiz;
+                // renderAdminDashboard();
+            };
+
+            const handleQuestionInput = (field, value, index = null) => {
+                if (field === 'options' && index !== null) {
+                    let newOptions = [...newQuestion.options];
+                    newOptions[index] = value;
+                    newQuestion = { ...newQuestion, options: newOptions };
+                } else if (field === 'text' || field === 'explanation') {
+                    newQuestion = { ...newQuestion, [field]: value };
+                } else if (field === 'correctAnswer') {
+                    newQuestion = { ...newQuestion, [field]: parseInt(value) };
+                }
+                appState.admin.newQuestion = newQuestion;
+                // renderAdminDashboard();
+            };
+
+            const handleRemoveQuestion = (indexToRemove) => {
+                newQuiz.questions = newQuiz.questions.filter((_, i) => i !== indexToRemove);
+                appState.admin.newQuiz = newQuiz;
+                renderAdminDashboard();
+            };
+
+            const handleAddQuestion = () => {
+                const q = newQuestion;
+                // Basic validation for question creation
+                if (!q.text.trim() || q.options.some(opt => !opt.trim()) || q.options.length < 2) {
+                    toast('Question text and all 4 options must be filled. (Min 2 options required)', 'error');
+                    return;
+                }
+
+                const newQ = {
+                    id: `q${(newQuiz.questions?.length || 0) + 1}`,
+                    text: q.text,
+                    options: q.options.filter(opt => opt.trim()), // Filter out empty options just in case, but frontend enforces 4
+                    correctAnswer: q.correctAnswer,
+                    explanation: q.explanation || 'No explanation provided.',
+                };
+
+                newQuiz.questions = [...(newQuiz.questions || []), newQ];
+
+                // Reset question form state
+                newQuestion = {
+                    text: '', options: ['', '', '', ''], correctAnswer: 0, explanation: '',
+                };
+                appState.admin.newQuiz = newQuiz;
+                appState.admin.newQuestion = newQuestion;
+                renderAdminDashboard();
+            };
+
+            const handleCreateQuiz = async () => {
+                if (!newQuiz.title.trim() || !newQuiz.description.trim() || !newQuiz.questions || newQuiz.questions.length === 0) {
+                    toast('Quiz must have a title, description, and at least one question.', 'error');
+                    return;
+                }
+
+                // --- BACKEND INTEGRATION: Create Quiz Call ---
+                try {
+                    const response = await fetch(`${BASE_URL}/quizzes`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${appState.token}` },
+                        body: JSON.stringify(newQuiz)
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        mockQuizzes.unshift(data.quiz);
+                        toast(`Quiz "${data.quiz.title}" created successfully!`, 'success');
+                    } else {
+                        const errorData = await response.json();
+                        toast(`Failed to create quiz: ${errorData.message || response.statusText}`, 'error');
+                    }
+                } catch (error) {
+                    toast('Failed to connect to backend for quiz creation.', 'error');
+                }
+
+                // Reset admin state
+                appState.admin = {
+                    showAddQuiz: false,
+                    activeModalTab: 'manual',
+                    isGenerating: false,
+                    generatedQuestions: [],
+                    newQuiz: { title: '', description: '', category: 'Programming', difficulty: 'Medium', duration: 15, passingScore: 70, questions: [], },
+                    newQuestion: { text: '', options: ['', '', '', ''], correctAnswer: 0, explanation: '', },
+                    generationConfig: { topic: '', numQuestions: 5, difficulty: 'Medium' }
+                };
+                router();
+            };
+
+            const setAddQuizVisible = (visible) => {
+                appState.admin.showAddQuiz = visible;
+                if (!visible) {
+                    // Reset state when closing the modal
+                    appState.admin.newQuiz = { title: '', description: '', category: 'Programming', difficulty: 'Medium', duration: 15, passingScore: 70, questions: [], };
+                    appState.admin.newQuestion = { text: '', options: ['', '', '', ''], correctAnswer: 0, explanation: '', };
+                    appState.admin.generatedQuestions = [];
+                    appState.admin.activeModalTab = 'manual';
+                    appState.admin.isGenerating = false;
+                    appState.admin.generationConfig = { topic: '', numQuestions: 5, difficulty: 'Medium' };
+                }
+                renderAdminDashboard();
+            };
+
+            const handleModalTabChange = (tab) => {
+                appState.admin.activeModalTab = tab;
+                renderAdminDashboard();
+            };
+
+            // Expose admin functions globally
+            window.handleQuizInput = handleQuizInput;
+            window.handleQuestionInput = handleQuestionInput;
+            window.handleAddQuestion = handleAddQuestion;
+            window.handleCreateQuiz = handleCreateQuiz;
+            window.setAddQuizVisible = setAddQuizVisible;
+            window.handleRemoveQuestion = handleRemoveQuestion;
+            window.handleModalTabChange = handleModalTabChange;
+            window.generateQuestionsLLM = generateQuestionsLLM;
+            window.handleGenerationConfigInput = handleGenerationConfigInput;
+            window.handleAddGeneratedQuestions = handleAddGeneratedQuestions;
+
+            const quizTableRows = mockQuizzes.map(quiz => `
+                <tr class="border-b border-border">
+                    <td class="p-3 text-sm font-medium">${quiz.title}</td>
+                    <td class="p-3 text-sm"><span class="px-2 py-0.5 text-xs rounded-full bg-gray-100 dark:bg-gray-700">${quiz.category}</span></td>
+                    <td class="p-3 text-sm">
+                        <span class="px-2 py-0.5 text-xs rounded-full ${quiz.difficulty === 'Easy' ? 'bg-green-100 text-green-800 dark:bg-green-950/50 dark:text-green-300' :
+                    quiz.difficulty === 'Medium' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-950/50 dark:text-yellow-300' :
+                        'bg-red-100 text-red-800 dark:bg-red-950/50 dark:text-red-300'
+                }">${quiz.difficulty}</span>
+                    </td>
+                    <td class="p-3 text-sm">${quiz.questions.length}</td>
+                    <td class="p-3 text-sm">${quiz.createdDate}</td>
+                    <td class="p-3 text-sm">
+                        <span class="px-2 py-0.5 text-xs rounded-full ${quiz.status === 'active' ? 'bg-blue-100 text-blue-800 dark:bg-blue-950/50 dark:text-blue-300' : 'bg-gray-300 text-gray-800 dark:bg-gray-700 dark:text-gray-300'}">
+                            ${quiz.status.charAt(0).toUpperCase() + quiz.status.slice(1)}
+                        </span>
+                    </td>
+                    <td class="p-3">
+                        <button class="text-gray-500 hover:text-red-600 p-1" onclick="toast('Delete not implemented yet.', 'info')">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+
+            // --- Modal Content Renderers ---
+
+            const renderManualQuestionTab = () => `
+                <div class="space-y-3 pt-4">
+                    <p class="text-sm text-muted-foreground">Manually create each question for your quiz below.</p>
+                    <div class="space-y-3 p-4 border border-border rounded-xl bg-gray-50 dark:bg-gray-900 shadow-inner">
+                        <h5 class="text-md font-semibold border-b border-border/50 pb-2">New Question Details</h5>
+                        <input type="text" value="${newQuestion.text}" oninput="handleQuestionInput('text', this.value)" placeholder="Question text *" class="input w-full p-2 rounded-md has-icon" style="padding-left: 1rem;" required/>
+                        
+                        <!-- Options -->
+                        <div class="space-y-2">
+                            ${newQuestion.options.map((opt, i) => `
+                                <div class="flex items-center gap-2">
+                                    <span class="text-sm font-medium w-4 flex-shrink-0 text-muted-foreground">${String.fromCharCode(65 + i)}.</span>
+                                    <input type="text" value="${opt}" oninput="handleQuestionInput('options', this.value, ${i})" placeholder="Option ${i + 1} *" class="input w-full p-2 rounded-md has-icon" style="padding-left: 0.5rem;" required/>
+                                </div>
+                            `).join('')}
+                        </div>
+
+                        <!-- Correct Answer Selector -->
+                        <select value="${newQuestion.correctAnswer}" onchange="handleQuestionInput('correctAnswer', this.value)" class="select-trigger w-full p-2 rounded-md has-icon" style="padding-left: 1rem;">
+                            ${newQuestion.options.map((_, i) => `<option value="${i}">Correct Answer: Option ${String.fromCharCode(65 + i)}</option>`).join('')}
+                        </select>
+                        <input type="text" value="${newQuestion.explanation}" oninput="handleQuestionInput('explanation', this.value)" placeholder="Explanation (Optional)" class="input w-full p-2 rounded-md has-icon" style="padding-left: 1rem;"/>
+                        <button onclick="handleAddQuestion()" class="btn-primary w-full py-2 rounded-md font-semibold bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50" ${(!newQuestion.text.trim() || newQuestion.options.some(opt => !opt.trim())) ? 'disabled' : ''}>
+                            + Add Question to Quiz
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            const renderGenerateQuestionTab = () => `
+                <div class="space-y-6 pt-4">
+                    <p class="text-sm text-muted-foreground">Use AI to automatically generate high-quality questions for your quiz.</p>
+                    
+                    <div class="space-y-4 p-4 border border-border rounded-xl bg-gray-50 dark:bg-gray-900 shadow-inner">
+                        <h5 class="text-md font-semibold border-b border-border/50 pb-2">Generation Settings</h5>
+
+                        <div class="space-y-2">
+                            <label class="block text-sm font-medium">Topic / Keywords *</label>
+                            <input type="text" value="${genConfig.topic}" oninput="handleGenerationConfigInput('topic', this.value)" placeholder="e.g., Python OOP principles, Advanced CSS Grid" class="input w-full p-2 rounded-md has-icon" style="padding-left: 1rem;" required/>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="space-y-2">
+                                <label class="block text-sm font-medium">Number of Questions (1-10)</label>
+                                <input type="number" value="${genConfig.numQuestions}" oninput="handleGenerationConfigInput('numQuestions', this.value)" min="1" max="10" class="input w-full p-2 rounded-md has-icon" style="padding-left: 1rem;"/>
+                            </div>
+                            <div class="space-y-2">
+                                <label class="block text-sm font-medium">Difficulty</label>
+                                <select value="${genConfig.difficulty}" onchange="handleGenerationConfigInput('difficulty', this.value)" class="select-trigger w-full p-2 rounded-md has-icon" style="padding-left: 1rem;">
+                                    <option value="Easy">Easy</option>
+                                    <option value="Medium">Medium</option>
+                                    <option value="Hard">Hard</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <button onclick="generateQuestionsLLM()" class="btn-primary w-full py-2 rounded-md font-semibold bg-green-600 hover:bg-green-700 disabled:opacity-50 flex items-center justify-center gap-2" ${!genConfig.topic.trim() || adminState.isGenerating ? 'disabled' : ''}>
+                            ${adminState.isGenerating
+                    ? `<div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> Generating...`
+                    : `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg> Generate Questions`
+                }
+                        </button>
+                    </div>
+
+                    <!-- Generated Questions Preview -->
+                    ${appState.admin.generatedQuestions.length > 0 ? `
+                        <div class="p-4 border border-indigo-400/50 rounded-xl bg-indigo-50 dark:bg-indigo-900/30">
+                            <h5 class="text-md font-semibold text-indigo-700 dark:text-indigo-300 mb-3">Preview (${appState.admin.generatedQuestions.length} Generated)</h5>
+                            <div class="space-y-3 max-h-48 overflow-y-auto pr-2">
+                                ${appState.admin.generatedQuestions.map((q, i) => `
+                                    <div class="p-3 bg-indigo-100 dark:bg-indigo-800/50 rounded-lg text-sm">
+                                        <span class="font-bold">Q${i + 1}:</span> ${q.text} 
+                                        <span class="text-xs text-green-600 dark:text-green-400 ml-2">(Correct: ${String.fromCharCode(65 + q.correctAnswer)})</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            <button onclick="handleAddGeneratedQuestions()" class="w-full mt-4 py-2 text-sm rounded-md font-semibold bg-indigo-600 text-white hover:bg-indigo-700">
+                                Add All ${appState.admin.generatedQuestions.length} Questions to Quiz Draft
+                            </button>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+
+            // --- Modal HTML (Hidden by default) ---
+            const addQuizModal = `
+                <div id="add-quiz-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center transition-opacity duration-300 ${showAddQuiz ? 'opacity-100' : 'opacity-0 pointer-events-none'}" onclick="setAddQuizVisible(false)">
+                    <div class="bg-card w-full max-w-4xl rounded-xl shadow-2xl p-6 transform transition-transform duration-300 ${showAddQuiz ? 'scale-100' : 'scale-95'}" onclick="event.stopPropagation()">
+                        <div class="flex justify-between items-center border-b border-border pb-3 mb-4">
+                            <h3 class="text-xl font-semibold">Create New Quiz</h3>
+                            <button onclick="setAddQuizVisible(false)" class="text-muted-foreground hover:text-primary p-1">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            </button>
+                        </div>
+                        
+                        <div class="max-h-[70vh] overflow-y-auto pr-4 space-y-6">
+                            <!-- Quiz Details -->
+                            <h4 class="text-lg font-bold text-primary/80">1. Quiz Metadata</h4>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="space-y-2">
+                                    <label class="block text-sm font-medium">Title *</label>
+                                    <input type="text" value="${newQuiz.title}" oninput="handleQuizInput('title', this.value)" placeholder="e.g., JavaScript Fundamentals" class="input w-full p-2 rounded-md has-icon" style="padding-left: 1rem;" required/>
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="block text-sm font-medium">Category</label>
+                                    <select value="${newQuiz.category}" onchange="handleQuizInput('category', this.value)" class="select-trigger w-full p-2 rounded-md has-icon" style="padding-left: 1rem;">
+                                        <option value="Programming">Programming</option>
+                                        <option value="Web Design">Web Design</option>
+                                        <option value="Database">Database</option>
+                                        <option value="General">General</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-2">
+                                <label class="block text-sm font-medium">Description *</label>
+                                <textarea oninput="handleQuizInput('description', this.value)" placeholder="A brief description of what the quiz covers." class="textarea w-full p-2 rounded-md has-icon" style="padding-left: 1rem;" required>${newQuiz.description}</textarea>
+                            </div>
+
+                            <div class="grid grid-cols-3 gap-4">
+                                <div class="space-y-2">
+                                    <label class="block text-sm font-medium">Difficulty</label>
+                                    <select value="${newQuiz.difficulty}" onchange="handleQuizInput('difficulty', this.value)" class="select-trigger w-full p-2 rounded-md has-icon" style="padding-left: 1rem;">
+                                        <option value="Easy">Easy</option>
+                                        <option value="Medium">Medium</option>
+                                        <option value="Hard">Hard</option>
+                                    </select>
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="block text-sm font-medium">Duration (min)</label>
+                                    <input type="number" value="${newQuiz.duration}" oninput="handleQuizInput('duration', parseInt(this.value) || 0)" min="1" max="120" class="input w-full p-2 rounded-md has-icon" style="padding-left: 1rem;"/>
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="block text-sm font-medium">Passing Score (%)</label>
+                                    <input type="number" value="${newQuiz.passingScore}" oninput="handleQuizInput('passingScore', parseInt(this.value) || 0)" min="0" max="100" class="input w-full p-2 rounded-md has-icon" style="padding-left: 1rem;"/>
+                                </div>
+                            </div>
+
+                            <!-- Question Management Section -->
+                            <div class="border-t border-border pt-4">
+                                <h4 class="text-lg font-bold text-primary/80 mb-3">2. Question Management</h4>
+                                
+                                <!-- Question Tabs -->
+                                <div class="tabs-list mb-4 p-1 w-full max-w-sm mx-auto">
+                                    <button onclick="handleModalTabChange('manual')" class="tabs-trigger ${activeModalTab === 'manual' ? 'tabs-active shadow' : ''}">
+                                        Manual Entry
+                                    </button>
+                                    <button onclick="handleModalTabChange('generate')" class="tabs-trigger ${activeModalTab === 'generate' ? 'tabs-active shadow' : ''}">
+                                        ✨ AI Generator
+                                    </button>
+                                </div>
+                                
+                                <!-- Current Questions Preview (Always visible) -->
+                                <div class="mb-4">
+                                    <h5 class="text-sm font-semibold mb-2 text-muted-foreground">Current Quiz Questions (${newQuiz.questions?.length || 0})</h5>
+                                    <div class="space-y-2 max-h-32 overflow-y-auto p-2 border border-border/50 rounded-lg bg-gray-50 dark:bg-gray-800">
+                                        ${newQuiz.questions?.map((q, i) => `
+                                            <div class="p-2 bg-gray-100 dark:bg-gray-700 rounded-md text-xs flex justify-between items-center">
+                                                <span class="font-medium truncate pr-4">Q${i + 1}: ${q.text}</span>
+                                                <button onclick="handleRemoveQuestion(${i})" class="text-red-500 hover:text-red-700 p-1">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                                </button>
+                                            </div>
+                                        `).join('') || '<p class="text-sm text-muted-foreground italic">No questions added yet.</p>'}
+                                    </div>
+                                </div>
+
+                                <!-- Tab Content -->
+                                ${activeModalTab === 'manual' ? renderManualQuestionTab() : renderGenerateQuestionTab()}
+                            </div>
+                        </div>
+                        
+                        <!-- Footer -->
+                        <div class="flex justify-end gap-3 pt-4 border-t border-border mt-4">
+                            <button onclick="setAddQuizVisible(false)" class="px-4 py-2 text-sm rounded-md bg-gray-200 dark:bg-gray-700 font-semibold hover:opacity-90">Cancel</button>
+                            <button onclick="handleCreateQuiz()" class="btn-primary px-4 py-2 text-sm rounded-md font-semibold disabled:opacity-50" ${(!newQuiz.title.trim() || newQuiz.questions?.length === 0) ? 'disabled' : ''}>
+                                Create Quiz (${newQuiz.questions?.length || 0} Qs)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            app.innerHTML = `
+                <div class="p-8 max-w-7xl mx-auto">
+                    <h1 class="text-3xl font-bold mb-6 text-primary">Admin Dashboard</h1>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                        <div class="card p-6 rounded-xl shadow-lg border-2 border-indigo-200 dark:border-indigo-900"><p class="text-sm text-muted-foreground">Total Quizzes</p><p class="text-3xl font-extrabold">${totalQuizzes}</p></div>
+                        <div class="card p-6 rounded-xl shadow-lg border-2 border-indigo-200 dark:border-indigo-900"><p class="text-sm text-muted-foreground">Active Quizzes</p><p class="text-3xl font-extrabold text-green-600">${activeQuizzes}</p></div>
+                        <div class="card p-6 rounded-xl shadow-lg border-2 border-indigo-200 dark:border-indigo-900"><p class="text-sm text-muted-foreground">Mock Users</p><p class="text-3xl font-extrabold">3 (Mocked)</p></div>
+                    </div>
+                    <h2 class="text-2xl font-semibold mt-10 mb-4">Quiz Management</h2>
+                    
+                    <div class="flex justify-end mb-4">
+                        <button onclick="setAddQuizVisible(true)" class="btn-primary py-2 px-4 rounded-md flex items-center gap-2">
+                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                             Add New Quiz
+                        </button>
+                    </div>
+
+                    <div class="card overflow-x-auto">
+                        <table class="min-w-full divide-y divide-border">
+                            <thead class="bg-gray-50 dark:bg-gray-800">
+                                <tr>
+                                    <th class="p-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Title</th>
+                                    <th class="p-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Category</th>
+                                    <th class="p-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Difficulty</th>
+                                    <th class="p-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Questions</th>
+                                    <th class="p-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Date</th>
+                                    <th class="p-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</th>
+                                    <th class="p-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-border">
+                                ${quizTableRows}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                ${addQuizModal}
+            `;
+        }
+
+        // --- 6. INITIALIZATION ---
+
+        // Load theme preference on initialization
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        }
+
+        // Listen for hash changes to simulate routing
+        window.addEventListener('hashchange', router);
+
+        // Initial load
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!appState.isAuthenticated && window.location.hash.slice(1) === '') {
+                navigate('/login');
+            } else {
+                router();
+            }
+        });
+    </script>
+</body>
+
+</html>
