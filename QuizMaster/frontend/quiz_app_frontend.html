@@ -12,7 +12,7 @@
 
     <style>
         /* --- CSS Variables Integrated from globals.css --- */
-        
+
         :root {
             /* Core Colors */
             --background: #ffffff;
@@ -218,6 +218,15 @@
             color: #4f535a !important;
             opacity: 1 !important;
         }
+
+        /* Custom style for sortable headers */
+        .sortable-header {
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
     </style>
 </head>
 
@@ -287,7 +296,9 @@
                     topic: '',
                     numQuestions: 5,
                     difficulty: 'Medium'
-                }
+                },
+                sortKey: 'createdDate', // New: Default sort column
+                sortDirection: 'desc'    // New: Default sort direction
             }
         };
 
@@ -428,6 +439,7 @@
 
             const isAuthRoute = path === '/login' || path === '/register' || path === '/forgot-password';
             const isAdminRoute = path === '/admin';
+            const isAdminFeedbackRoute = path === '/admin-feedback';
             const isAuthenticated = appState.isAuthenticated;
 
             renderHeader(path);
@@ -435,7 +447,7 @@
             if (!isAuthenticated && !isAuthRoute) {
                 return navigate('/login');
             }
-            if (isAuthenticated && isAdminRoute && appState.user.role !== 'admin') {
+            if (isAuthenticated && (isAdminRoute || isAdminFeedbackRoute) && appState.user.role !== 'admin') {
                 return navigate('/dashboard');
             }
 
@@ -445,7 +457,13 @@
                     const response = await fetch(`${BASE_URL}/quizzes`);
                     const data = await response.json();
                     if (response.ok) {
-                        mockQuizzes = data;
+                        // FIX: Inject status and createdDate for frontend display compatibility 
+                        // as the backend currently only returns core data from the database.
+                        mockQuizzes = data.map(quiz => ({
+                            ...quiz,
+                            status: quiz.status || 'active',
+                            createdDate: new Date().toLocaleDateString('en-US'),
+                        }));
                     }
                 } catch (error) {
                     // console.error('Could not connect to backend. Using old mock data if available.', error);
@@ -464,6 +482,7 @@
             if (path === '/profile') return renderProfile();
             if (path === '/feedback') return renderFeedback();
             if (path === '/admin') return renderAdminDashboard();
+            if (path === '/admin-feedback') return renderAdminFeedback();
 
             app.innerHTML = '<div class="p-8 text-center text-xl text-red-500">404 - Page Not Found</div>';
         }
@@ -480,7 +499,7 @@
             if (appState.isAuthenticated) {
                 const isAdmin = user.role === 'admin';
                 const links = isAdmin
-                    ? [{ path: '/admin', name: 'Admin Dashboard' }]
+                    ? [{ path: '/admin', name: 'Admin Dashboard' }, { path: '/admin-feedback', name: 'Feedback' }]
                     : [
                         { path: '/dashboard', name: 'Dashboard' },
                         { path: '/browse', name: 'Quizzes' },
@@ -1614,7 +1633,7 @@
                             <div class="space-y-2">
                                 <label for="message" class="block text-sm font-medium">Your Feedback *</label>
                                 <textarea id="message" data-field="message" placeholder="Tell us what you think..." rows="6" class="textarea w-full p-2 rounded-md resize-none has-icon" style="padding-left: 1rem;" required>${formData.message}</textarea>
-                                <p class="text-sm text-muted-foreground">${formData.message.length} characters</p>
+                                <!--<p class="text-sm text-muted-foreground">${formData.message.length} characters</p>
                             </div>
 
                             <!-- Submit Button -->
@@ -1643,17 +1662,23 @@
             const handleInputChange = (e) => {
                 const field = e.target.dataset.field || e.target.id;
                 formData = { ...formData, [field]: e.target.value };
-                if (field === 'message') {
-                    updateFormUI();
+
+                // ONLY update specific things that depend on input without resetting the form
+                if(field === 'message') {
+                    // For example, update character count if you have one separately
+                    const charCountEl = document.querySelector('#feedback-form p.text-muted-foreground');
+                    if(charCountEl) charCountEl.textContent = `${formData.message.length} characters`;
                 }
+                // Do not call updateFormUI here to avoid resetting form and losing cursor
             };
+
 
             const handleStarClick = (rating) => {
                 formData = { ...formData, rating };
                 updateFormUI();
             };
 
-            const handleSubmit = (e) => {
+            const handleSubmit = async (e) => {
                 e.preventDefault();
 
                 if (!formData.type || !formData.rating || !formData.message.trim()) {
@@ -1664,19 +1689,35 @@
                 isSubmitting = true;
                 updateFormUI();
 
-                // Simulate submission delay
-                setTimeout(() => {
+                // Prepare payload for backend
+                const payload = {
+                    userId: appState.user ? appState.user.id : null,
+                    quizId: null,
+                    comments: `[${formData.type.toUpperCase()}] ${formData.message}`,
+                    rating: formData.rating
+                };
+
+                try {
+                    const res = await fetch(`${BASE_URL}/feedback`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (!res.ok) throw new Error('Failed to submit');
                     isSubmitting = false;
                     isSubmitted = true;
                     toast('Thank you for your feedback!', 'success');
                     updateFormUI();
-
                     setTimeout(() => {
                         isSubmitted = false;
                         formData = { ...initialFormState };
                         updateFormUI();
                     }, 3000);
-                }, 1500);
+                } catch (err) {
+                    isSubmitting = false;
+                    toast('Failed to submit feedback. Please try again.', 'error');
+                    updateFormUI();
+                }
             };
 
             window.handleStarClick = handleStarClick;
@@ -1719,22 +1760,6 @@
             if (activeInput && (activeInput.tagName === 'INPUT' || activeInput.tagName === 'TEXTAREA')) {
                 cursorPosition = activeInput.selectionStart;
             }
-
-            try {
-                // ...your question generation logic, API calls, and updates...
-            } finally {
-                appState.admin.isGenerating = false;
-                renderAdminDashboard();
-                setTimeout(() => {
-                    if (activeInput && typeof activeInput.focus === 'function') {
-                        activeInput.focus();
-                        if (cursorPosition !== null) {
-                            activeInput.setSelectionRange(cursorPosition, cursorPosition);
-                        }
-                    }
-                }, 10);
-            }
-
 
             const config = appState.admin.generationConfig;
             if (!config.topic.trim()) {
@@ -1805,8 +1830,56 @@
             } finally {
                 appState.admin.isGenerating = false;
                 renderAdminDashboard();
+                setTimeout(() => {
+                    if (activeInput && typeof activeInput.focus === 'function') {
+                        activeInput.focus();
+                        if (cursorPosition !== null) {
+                            activeInput.setSelectionRange(cursorPosition, cursorPosition);
+                        }
+                    }
+                }, 10);
             }
         }
+
+        // --- SORTING FUNCTIONALITY ---
+        const sortQuizzes = (quizzes, key, direction) => {
+            const sorted = [...quizzes].sort((a, b) => {
+                let aValue = a[key];
+                let bValue = b[key];
+
+                if (key === 'questions') {
+                    aValue = a.questions.length;
+                    bValue = b.questions.length;
+                } else if (key === 'createdDate') {
+                    // Convert "MM/DD/YYYY" or "M/D/YYYY" format to date objects for accurate comparison
+                    aValue = new Date(a.createdDate);
+                    bValue = new Date(b.createdDate);
+                } else if (typeof aValue === 'string') {
+                    aValue = aValue.toLowerCase();
+                    bValue = bValue.toLowerCase();
+                }
+
+                if (aValue < bValue) return direction === 'asc' ? -1 : 1;
+                if (aValue > bValue) return direction === 'asc' ? 1 : -1;
+                return 0;
+            });
+            return sorted;
+        };
+
+        const handleSort = (key) => {
+            let direction = appState.admin.sortDirection;
+
+            if (appState.admin.sortKey === key) {
+                direction = direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                direction = 'asc'; // Default ascending when switching columns
+            }
+
+            appState.admin.sortKey = key;
+            appState.admin.sortDirection = direction;
+            renderAdminDashboard();
+        };
+        // -----------------------------
 
         // --- ADMIN DASHBOARD SCREEN (Updated for Backend) ---
         function renderAdminDashboard() {
@@ -1824,6 +1897,8 @@
             if (JSON.stringify(newQuiz) !== JSON.stringify(appState.admin.newQuiz)) newQuiz = appState.admin.newQuiz;
             if (JSON.stringify(newQuestion) !== JSON.stringify(appState.admin.newQuestion)) newQuestion = appState.admin.newQuestion;
 
+            // Apply Sorting
+            const sortedQuizzes = sortQuizzes(mockQuizzes, adminState.sortKey, adminState.sortDirection);
 
             const handleQuizInput = (field, value) => {
                 newQuiz = { ...newQuiz, [field]: value };
@@ -1852,31 +1927,58 @@
             };
 
             const handleAddQuestion = () => {
-                const q = newQuestion;
-                // Basic validation for question creation
-                if (!q.text.trim() || q.options.some(opt => !opt.trim()) || q.options.length < 2) {
-                    toast('Question text and all 4 options must be filled. (Min 2 options required)', 'error');
+                const newQuestion = appState.admin.newQuestion;
+
+                // Basic validation: question text required
+                if (!newQuestion.text.trim()) {
+                    toast("Please enter question text.", "error");
                     return;
                 }
 
-                const newQ = {
-                    id: `q${(newQuiz.questions?.length || 0) + 1}`,
-                    text: q.text,
-                    options: q.options.filter(opt => opt.trim()), // Filter out empty options just in case, but frontend enforces 4
-                    correctAnswer: q.correctAnswer,
-                    explanation: q.explanation || 'No explanation provided.',
+                // Basic validation: at least two options and none should be empty
+                const filledOptions = newQuestion.options.filter(opt => opt.trim() !== "");
+                if (filledOptions.length < 2) {
+                    toast("At least 2 options required, and none should be empty.", "error");
+                    return;
+                }
+
+                // Validate correctAnswer index within options
+                if (newQuestion.correctAnswer < 0 || newQuestion.correctAnswer >= filledOptions.length) {
+                    toast("Please select a valid correct answer option.", "error");
+                    return;
+                }
+
+                // Create question object with incremental ID
+                const id = `q${appState.admin.newQuiz.questions.length + 1}`;
+
+                const questionToAdd = {
+                    id,
+                    text: newQuestion.text.trim(),
+                    options: filledOptions,
+                    correctAnswer: newQuestion.correctAnswer,
+                    explanation: newQuestion.explanation.trim() || ""
                 };
 
-                newQuiz.questions = [...(newQuiz.questions || []), newQ];
+                // Add question to quiz questions array
+                appState.admin.newQuiz.questions = [
+                    ...appState.admin.newQuiz.questions,
+                    questionToAdd
+                ];
 
-                // Reset question form state
-                newQuestion = {
-                    text: '', options: ['', '', '', ''], correctAnswer: 0, explanation: '',
+                // Reset new question input fields
+                appState.admin.newQuestion = {
+                    text: "",
+                    options: ["", "", "", ""], // or appropriate number of empty options
+                    correctAnswer: 0,
+                    explanation: ""
                 };
-                appState.admin.newQuiz = newQuiz;
-                appState.admin.newQuestion = newQuestion;
+
+                toast("Question added successfully!", "success");
+
+                // Re-render the admin dashboard or quiz editor UI
                 renderAdminDashboard();
             };
+
 
             const handleCreateQuiz = async () => {
                 if (!newQuiz.title.trim() || !newQuiz.description.trim() || !newQuiz.questions || newQuiz.questions.length === 0) {
@@ -1894,8 +1996,18 @@
 
                     if (response.ok) {
                         const data = await response.json();
-                        mockQuizzes.unshift(data.quiz);
-                        toast(`Quiz "${data.quiz.title}" created successfully!`, 'success');
+
+                        // FIX: The backend returns only metadata. We must inject the questions, status, and date
+                        // back into the client-side object for immediate display in the mockQuizzes array.
+                        const createdQuiz = {
+                            ...data.quiz,
+                            questions: newQuiz.questions,
+                            status: 'active',
+                            createdDate: new Date().toLocaleDateString('en-US'),
+                        };
+
+                        mockQuizzes.unshift(createdQuiz);
+                        toast(`Quiz "${createdQuiz.title}" created successfully!`, 'success');
                     } else {
                         const errorData = await response.json();
                         toast(`Failed to create quiz: ${errorData.message || response.statusText}`, 'error');
@@ -1906,13 +2018,13 @@
 
                 // Reset admin state
                 appState.admin = {
+                    ...appState.admin, // Preserve sorting state
                     showAddQuiz: false,
                     activeModalTab: 'manual',
                     isGenerating: false,
                     generatedQuestions: [],
                     newQuiz: { title: '', description: '', category: 'Programming', difficulty: 'Medium', duration: 15, passingScore: 70, questions: [], },
-                    newQuestion: { text: '', options: ['', '', '', ''], correctAnswer: 0, explanation: '', },
-                    generationConfig: { topic: '', numQuestions: 5, difficulty: 'Medium' }
+                    newQuestion: { text: '', options: ['', '', '', ''], correctAnswer: 0, explanation: '', }
                 };
                 router();
             };
@@ -1920,7 +2032,7 @@
             const setAddQuizVisible = (visible) => {
                 appState.admin.showAddQuiz = visible;
                 if (!visible) {
-                    // Reset state when closing the modal
+                    // Reset transient state when closing the modal
                     appState.admin.newQuiz = { title: '', description: '', category: 'Programming', difficulty: 'Medium', duration: 15, passingScore: 70, questions: [], };
                     appState.admin.newQuestion = { text: '', options: ['', '', '', ''], correctAnswer: 0, explanation: '', };
                     appState.admin.generatedQuestions = [];
@@ -1936,6 +2048,13 @@
                 renderAdminDashboard();
             };
 
+            // Helper to get the sort icon
+            const getSortIcon = (key) => {
+                if (adminState.sortKey !== key) return `<svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4"></path></svg>`;
+                if (adminState.sortDirection === 'asc') return `<svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>`;
+                return `<svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>`;
+            };
+
             // Expose admin functions globally
             window.handleQuizInput = handleQuizInput;
             window.handleQuestionInput = handleQuestionInput;
@@ -1947,8 +2066,23 @@
             window.generateQuestionsLLM = generateQuestionsLLM;
             window.handleGenerationConfigInput = handleGenerationConfigInput;
             window.handleAddGeneratedQuestions = handleAddGeneratedQuestions;
+            window.handleSort = handleSort; // Expose sort handler
+            window.handleDeleteQuiz = async (quizId) => {
+                try {
+                    const res = await fetch(`${BASE_URL}/quizzes/${quizId}`, { method: 'DELETE' });
+                    if (!res.ok) {
+                        const err = await res.json().catch(() => ({}));
+                        return toast(err.message || 'Failed to delete quiz.', 'error');
+                    }
+                    mockQuizzes = mockQuizzes.filter(q => q.id !== quizId);
+                    toast('Quiz deleted.', 'success');
+                    renderAdminDashboard();
+                } catch (e) {
+                    toast('Failed to connect to backend for deletion.', 'error');
+                }
+            };
 
-            const quizTableRows = mockQuizzes.map(quiz => `
+            const quizTableRows = sortedQuizzes.map(quiz => `
                 <tr class="border-b border-border">
                     <td class="p-3 text-sm font-medium">${quiz.title}</td>
                     <td class="p-3 text-sm"><span class="px-2 py-0.5 text-xs rounded-full bg-gray-100 dark:bg-gray-700">${quiz.category}</span></td>
@@ -1966,7 +2100,7 @@
                         </span>
                     </td>
                     <td class="p-3">
-                        <button class="text-gray-500 hover:text-red-600 p-1" onclick="toast('Delete not implemented yet.', 'info')">
+                        <button class="text-gray-500 hover:text-red-600 p-1" onclick="handleDeleteQuiz('${quiz.id}')">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                         </button>
                     </td>
@@ -2179,12 +2313,42 @@
                         <table class="min-w-full divide-y divide-border">
                             <thead class="bg-gray-50 dark:bg-gray-800">
                                 <tr>
-                                    <th class="p-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Title</th>
-                                    <th class="p-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Category</th>
-                                    <th class="p-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Difficulty</th>
-                                    <th class="p-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Questions</th>
-                                    <th class="p-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Date</th>
-                                    <th class="p-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</th>
+                                    <th class="p-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                        <span class="sortable-header" onclick="handleSort('title')">
+                                            Title
+                                            ${getSortIcon('title')}
+                                        </span>
+                                    </th>
+                                    <th class="p-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                        <span class="sortable-header" onclick="handleSort('category')">
+                                            Category
+                                            ${getSortIcon('category')}
+                                        </span>
+                                    </th>
+                                    <th class="p-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                        <span class="sortable-header" onclick="handleSort('difficulty')">
+                                            Difficulty
+                                            ${getSortIcon('difficulty')}
+                                        </span>
+                                    </th>
+                                    <th class="p-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                        <span class="sortable-header" onclick="handleSort('questions')">
+                                            Questions
+                                            ${getSortIcon('questions')}
+                                        </span>
+                                    </th>
+                                    <th class="p-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                        <span class="sortable-header" onclick="handleSort('createdDate')">
+                                            Date
+                                            ${getSortIcon('createdDate')}
+                                        </span>
+                                    </th>
+                                    <th class="p-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                        <span class="sortable-header" onclick="handleSort('status')">
+                                            Status
+                                            ${getSortIcon('status')}
+                                        </span>
+                                    </th>
                                     <th class="p-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
@@ -2195,6 +2359,58 @@
                     </div>
                 </div>
                 ${addQuizModal}
+            `;
+        }
+
+        // --- ADMIN FEEDBACK SCREEN ---
+        async function renderAdminFeedback() {
+            const app = document.getElementById('app');
+            let feedback = [];
+            try {
+                const res = await fetch(`${BASE_URL}/feedback`);
+                feedback = await res.json();
+            } catch (e) {
+                // ignore; show empty
+            }
+
+            const rows = feedback.map(f => `
+                <tr class="border-b border-border">
+                    <td class="p-3 text-sm">${new Date(f.date).toLocaleDateString('en-US')}</td>
+                    <td class="p-3 text-sm">${f.userId || '-'}</td>
+                    <td class="p-3 text-sm">${f.quizId || '-'}</td>
+                    <td class="p-3 text-sm">
+                        <span class="px-2 py-0.5 text-xs rounded-full ${f.rating >= 4 ? 'bg-green-100 text-green-800 dark:bg-green-900' : f.rating <= 2 ? 'bg-red-100 text-red-800 dark:bg-red-900' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900'}">
+                            ${f.rating}
+                        </span>
+                    </td>
+                    <td class="p-3 text-sm">${(f.comments || '').replace(/</g,'&lt;')}</td>
+                </tr>
+            `).join('');
+
+            app.innerHTML = `
+                <div class="p-8 max-w-7xl mx-auto">
+                    <div class="flex items-center justify-between mb-6">
+                        <h1 class="text-3xl font-bold text-primary">User Feedback</h1>
+                        <button onclick="navigate('/admin')" class="px-3 py-2 text-sm rounded-md bg-gray-200 dark:bg-gray-700 font-semibold">Back to Admin</button>
+                    </div>
+                    <div class="card overflow-x-auto">
+                        <table class="min-w-full divide-y divide-border">
+                            <thead class="bg-gray-50 dark:bg-gray-800">
+                                <tr>
+                                    <th class="p-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Date</th>
+                                    <th class="p-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">User</th>
+                                    <th class="p-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Quiz</th>
+                                    <th class="p-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Rating</th>
+                                    <th class="p-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Comments</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-border">
+                                ${rows || ''}
+                            </tbody>
+                        </table>
+                        ${feedback.length === 0 ? `<div class="p-8 text-center text-sm text-muted-foreground">No feedback found.</div>` : ''}
+                    </div>
+                </div>
             `;
         }
 
