@@ -1,62 +1,68 @@
-QuizMaster
+# QuizMaster
 
-QuizMaster is an interactive quiz web application developed using HTML, CSS, and JavaScript.
-The project focuses on testing user knowledge through multiple-choice questions with real-time score evaluation and feedback.
+QuizMaster is an interactive quiz web application developed using **HTML, CSS, and JavaScript**.  
+The project allows users to answer multiple-choice questions and get instant feedback along with their final score.
 
-📌 Project Overview
+---
 
-This project was created to strengthen understanding of:
+## 📌 Project Overview
 
-JavaScript logic building
+This project was built to strengthen understanding of:
 
-DOM manipulation and event handling
+- HTML for structuring web pages  
+- CSS for styling and responsive layouts  
+- JavaScript for logic building and DOM manipulation  
+- Event handling and dynamic UI updates  
 
-Dynamic UI updates
+The application is completely frontend-based and does not use any backend or database.
 
-Frontend project structuring
+---
 
-The application runs completely on the client side and does not require any backend or database.
+## 🚀 Features
 
-🚀 Features
+🧠 Multiple-choice quiz questions  
+📊 Real-time score calculation  
+⚡ Instant feedback on answers  
+🎨 Clean and user-friendly interface  
+📱 Responsive design for different screen sizes  
+🧩 Simple and readable code structure  
 
-🧠 Multiple-choice quiz questions
-⏱️ Real-time question navigation
-📊 Instant score calculation
-🎨 Clean and simple user interface
-📱 Responsive design for different screen sizes
-⚡ Interactive buttons and animations
+---
 
-🛠️ Tech Stack
+## 🛠️ Tech Stack
 
-HTML5 – Structure and layout
+- **HTML5** – Page structure and semantic elements  
+- **CSS3** – Styling, layout, and responsiveness  
+- **JavaScript (Vanilla)** – Quiz logic and DOM manipulation  
 
-CSS3 – Styling and responsiveness
+---
 
-JavaScript (Vanilla) – Quiz logic and DOM manipulation
-
-📂 Project Structure
+## 📂 Project Structure
 QuizMaster/
 │── index.html
 │── style.css
 │── script.js
 │── README.md
 
-▶️ How to Run the Project
+---
 
-Clone the repository:
+## ▶️ How to Run the Project
 
-git clone https://github.com/Shrey1006/QuizMaster.git
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/Shrey1006/QuizMaster.git
+2. Open index.html in any modern web browser.
 
+3. No server or additional setup is required.
 
-Open index.html in any modern web browser.
+--
+##🌱 Future Enhancements
 
-🌱 Future Enhancements
-
-🔐 User login system
-📚 Question categories and difficulty levels
 ⏳ Timer-based quizzes
+📚 Multiple quiz categories
 📈 Score history tracking
+🔐 User authentication
 
+--
 👤 Author
-
 Shreyansh Mojidra
